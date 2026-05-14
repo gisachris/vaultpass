@@ -3,6 +3,7 @@ import { Home } from '../pages/Home';
 import { SignUpPage } from '../pages/SignUpPage';
 import { SignInPage } from '../pages/SignInPage';
 import { DocumentsPage } from '../pages/DocumentsPage';
+import { TrustedContactsPage } from '../pages/TrustedContactsPage';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -77,6 +78,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <DocumentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/trusted-contacts"
+        element={
+          <ProtectedRoute>
+            <TrustedContactsPage />
           </ProtectedRoute>
         }
       />

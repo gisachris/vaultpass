@@ -195,10 +195,10 @@ export function DocumentsPage() {
             <span className="material-symbols-outlined">description</span>
             <span>Documents</span>
           </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
+          <Link to="/trusted-contacts" className="documents-sidebar-link">
             <span className="material-symbols-outlined">group</span>
             <span>Trusted Contacts</span>
-          </button>
+          </Link>
           <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
             <span className="material-symbols-outlined">share</span>
             <span>Shared Access</span>
