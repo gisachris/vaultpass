@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "vaultpass-backend"
+version = "0.1.0"
+description = "Secure web-based system to upload, store, and share personal documents"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [
+    {include = "vaultpass_backend", from = "src"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.110.0"
+uvicorn = {extras = ["standard"], version = "^0.28.0"}
+pydantic = {extras = ["email"], version = "^2.6.4"}
+pydantic-settings = "^2.2.1"
+sqlalchemy = "^2.0.28"
+alembic = "^1.13.1"
+asyncpg = "^0.31.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.9"
+cryptography = "^42.0.5"
+
+[tool.poetry.scripts]
+start = "vaultpass_backend.run:start"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+black = "^24.2.0"
+isort = "^5.13.2"
+mypy = "^1.9.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
