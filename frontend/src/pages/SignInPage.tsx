@@ -1,7 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 import './AuthPage.css';
 
 export function SignInPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -9,6 +14,7 @@ export function SignInPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -18,9 +24,19 @@ export function SignInPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sign In submitted:', formData);
+    setIsSubmitting(true);
+    try {
+      await login({ email: formData.email, password: formData.password });
+      toast.success('Signed in successfully!');
+      navigate('/');
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Invalid email or password';
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -157,8 +173,8 @@ export function SignInPage() {
               </div>
 
               {/* Submit Button */}
-              <button className="auth-submit-button" type="submit">
-                Sign In
+              <button className="auth-submit-button" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
 

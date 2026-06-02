@@ -1,7 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 import './AuthPage.css';
 
 export function SignUpPage() {
+  const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -12,6 +17,7 @@ export function SignUpPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -21,9 +27,43 @@ export function SignUpPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validatePasswordStrength = (pass: string) => {
+    if (pass.length < 8) return 'Password must be at least 8 characters long';
+    if (!/[A-Z]/.test(pass)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(pass)) return 'Password must contain at least one lowercase letter';
+    if (!/\d/.test(pass)) return 'Password must contain at least one number';
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sign Up submitted:', formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    const passwordError = validatePasswordStrength(formData.password);
+    if (passwordError) {
+      toast.error(passwordError);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await register({
+        full_name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+      toast.success('Account created successfully! Please sign in.');
+      navigate('/login');
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Registration failed. Please try again.';
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -211,8 +251,8 @@ export function SignUpPage() {
               </div>
 
               {/* Submit Button */}
-              <button className="auth-submit-button" type="submit">
-                Create Account
+              <button className="auth-submit-button" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating Account...' : 'Create Account'}
               </button>
             </form>
 
