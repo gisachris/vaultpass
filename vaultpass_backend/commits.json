@@ -1,0 +1,116 @@
+[
+  {
+    "date": "2026-05-19T09:15:00+02:00",
+    "message": "ft: scaffold backend project structure and pyproject.toml",
+    "files": [
+      "pyproject.toml",
+      "src/vaultpass_backend/__init__.py",
+      "src/vaultpass_backend/run.py",
+      "src/vaultpass_backend/repository/__init__.py",
+      "src/vaultpass_backend/services/__init__.py",
+      "src/vaultpass_backend/middleware/__init__.py",
+      "src/vaultpass_backend/utils/__init__.py",
+      "src/vaultpass_backend/models/__init__.py",
+      "src/vaultpass_backend/api/__init__.py",
+      "src/vaultpass_backend/schemas/__init__.py"
+    ]
+  },
+  {
+    "date": "2026-05-19T11:42:00+02:00",
+    "message": "ft: add app settings and config via pydantic-settings",
+    "files": [
+      "src/vaultpass_backend/core/__init__.py",
+      "src/vaultpass_backend/core/config.py"
+    ]
+  },
+  {
+    "date": "2026-05-20T10:05:00+02:00",
+    "message": "ft: set up async SQLAlchemy engine with SSL support",
+    "files": [
+      "src/vaultpass_backend/database/__init__.py",
+      "src/vaultpass_backend/database/connection.py",
+      "src/vaultpass_backend/database/session.py"
+    ]
+  },
+  {
+    "date": "2026-05-20T14:33:00+02:00",
+    "message": "ft: configure alembic for async migrations",
+    "files": [
+      "alembic.ini",
+      "alembic/env.py",
+      "alembic/README",
+      "alembic/script.py.mako"
+    ]
+  },
+  {
+    "date": "2026-05-21T09:50:00+02:00",
+    "message": "ft: add User SQLAlchemy model with uuid primary key",
+    "files": [
+      "src/vaultpass_backend/models/user.py"
+    ]
+  },
+  {
+    "date": "2026-05-21T11:20:00+02:00",
+    "message": "ft: add initial alembic migration for users table",
+    "files": [
+      "alembic/versions/cf835d013c89_create_users_table.py"
+    ]
+  },
+  {
+    "date": "2026-05-22T10:00:00+02:00",
+    "message": "ft: implement bcrypt password hashing and JWT token utilities",
+    "files": [
+      "src/vaultpass_backend/core/security.py"
+    ]
+  },
+  {
+    "date": "2026-05-22T15:14:00+02:00",
+    "message": "ft: add auth request/response pydantic schemas with validation",
+    "files": [
+      "src/vaultpass_backend/schemas/auth.py"
+    ]
+  },
+  {
+    "date": "2026-05-26T09:30:00+02:00",
+    "message": "ft: implement auth service - register and authenticate user",
+    "files": [
+      "src/vaultpass_backend/services/auth_service.py"
+    ]
+  },
+  {
+    "date": "2026-05-27T11:05:00+02:00",
+    "message": "ft: add JWT-based get_current_user dependency and db session provider",
+    "files": [
+      "src/vaultpass_backend/core/dependencies.py"
+    ]
+  },
+  {
+    "date": "2026-05-28T10:45:00+02:00",
+    "message": "ft: add auth router with register, login and /me endpoints",
+    "files": [
+      "src/vaultpass_backend/api/auth.py"
+    ]
+  },
+  {
+    "date": "2026-05-29T09:00:00+02:00",
+    "message": "ft: bootstrap FastAPI app with lifespan and register auth router",
+    "files": [
+      "src/vaultpass_backend/main.py"
+    ]
+  },
+  {
+    "date": "2026-05-30T14:10:00+02:00",
+    "message": "fix: disable asyncpg prepared statement cache for pgbouncer compatibility",
+    "files": [
+      "src/vaultpass_backend/database/connection.py",
+      "alembic/env.py"
+    ]
+  },
+  {
+    "date": "2026-06-02T10:00:00+02:00",
+    "message": "fix: run alembic migrations in asyncio.to_thread on app startup",
+    "files": [
+      "src/vaultpass_backend/main.py"
+    ]
+  }
+]
