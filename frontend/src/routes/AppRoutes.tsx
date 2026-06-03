@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from '../pages/Home';
 import { SignUpPage } from '../pages/SignUpPage';
 import { SignInPage } from '../pages/SignInPage';
+import { DocumentsPage } from '../pages/DocumentsPage';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -39,6 +40,22 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DocumentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/documents"
+        element={
+          <ProtectedRoute>
+            <DocumentsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/login" element={<SignInPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
