@@ -8,6 +8,7 @@ from alembic import command
 
 from vaultpass_backend.core.config import settings
 from vaultpass_backend.api.auth import router as auth_router
+from vaultpass_backend.api.documents import router as documents_router
 
 logger = logging.getLogger("vaultpass")
 
@@ -58,6 +59,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(auth_router, prefix="/api")
+app.include_router(documents_router, prefix="/api")
 
 
 @app.get("/")
