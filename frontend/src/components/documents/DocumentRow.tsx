@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DocumentModel, DOCUMENT_TYPE_ICONS, DOCUMENT_TYPE_LABELS } from '../../types/document';
 
 interface DocumentRowProps {
@@ -37,7 +37,23 @@ function formatFileSize(bytes: number) {
 
 export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDelete }: DocumentRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement | null>(null);
   const expiry = useMemo(() => getExpiryStatus(document), [document]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionsRef.current && !actionsRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
   const uploadedAt = useMemo(
     () => new Date(document.uploaded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
     [document.uploaded_at],
@@ -66,7 +82,7 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
           <span className="document-row-type">{DOCUMENT_TYPE_LABELS[document.document_type]}</span>
           <span className={`document-row-expiry document-row-expiry--${expiry.style}`}>{expiry.label}</span>
         </div>
-        <div className="document-row-actions">
+        <div className="document-row-actions" ref={actionsRef}>
           <button
             type="button"
             className="document-row-action-button"

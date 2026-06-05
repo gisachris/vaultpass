@@ -18,6 +18,10 @@ export function DocumentsPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<DocumentModel | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
   const {
@@ -101,24 +105,42 @@ export function DocumentsPage() {
     }
   };
 
-  const handleDeleteDocument = async (document: DocumentModel) => {
-    const confirmed = window.confirm(`Are you sure you want to delete “${document.title}”?`);
-    if (!confirmed) {
+  const requestDeleteDocument = (document: DocumentModel) => {
+    setPendingDelete(document);
+    setDeleteError('');
+    setConfirmDeleteOpen(true);
+  };
+
+  const cancelDeleteDocument = () => {
+    setConfirmDeleteOpen(false);
+    setPendingDelete(null);
+    setDeleteError('');
+  };
+
+  const confirmDeleteDocument = async () => {
+    if (!pendingDelete) {
       return;
     }
 
+    setDeleting(true);
+    setDeleteError('');
+
     try {
-      await deleteDocument(document.id);
+      await deleteDocument(pendingDelete.id);
       await refresh();
       toast.success('Document deleted successfully.');
+      setPendingDelete(null);
+      setConfirmDeleteOpen(false);
       setSelectedDocument(null);
       setDetailsOpen(false);
       setEditOpen(false);
     } catch (err) {
-      toast.error('Unable to delete document.');
+      setDeleteError('Unable to delete document.');
       if ((err as any)?.response?.status === 401) {
         navigate('/login');
       }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -315,7 +337,7 @@ export function DocumentsPage() {
                   onViewDetails={handleViewDetails}
                   onDownload={handleDownloadDocument}
                   onEdit={handleEditDocument}
-                  onDelete={handleDeleteDocument}
+                  onDelete={requestDeleteDocument}
                 />
               ))
             )}
@@ -369,10 +391,44 @@ export function DocumentsPage() {
         }}
         onDelete={() => {
           if (selectedDocument) {
-            handleDeleteDocument(selectedDocument);
+            requestDeleteDocument(selectedDocument);
           }
         }}
       />
+
+      {confirmDeleteOpen && pendingDelete && (
+        <div className="documents-modal-overlay" onClick={cancelDeleteDocument}>
+          <div className="documents-modal-window" onClick={(event) => event.stopPropagation()}>
+            <div className="documents-modal-header">
+              <div>
+                <h2>Delete document</h2>
+                <p>Confirm before removing this document from your vault.</p>
+              </div>
+              <button type="button" className="documents-modal-close" onClick={cancelDeleteDocument} aria-label="Close delete confirmation dialog">
+                ×
+              </button>
+            </div>
+
+            <div className="documents-modal-body">
+              <div className="documents-modal-row documents-modal-row--full">
+                <p>
+                  Are you sure you want to delete <strong>{pendingDelete.title}</strong>? This action cannot be undone.
+                </p>
+              </div>
+              {deleteError && <div className="documents-modal-error">{deleteError}</div>}
+            </div>
+
+            <div className="documents-modal-actions">
+              <button type="button" className="button button-secondary" onClick={cancelDeleteDocument} disabled={deleting}>
+                Cancel
+              </button>
+              <button type="button" className="button button-primary" onClick={confirmDeleteDocument} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete document'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <EditDocumentModal
         open={editOpen}
