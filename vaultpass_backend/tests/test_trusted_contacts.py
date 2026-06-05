@@ -182,9 +182,10 @@ def test_router_delete_contact(mock_delete, override_auth_dependency):
 
 # ================= SERVICE LAYER TESTS =================
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_added", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_email", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.create_contact", new_callable=AsyncMock)
-def test_service_create_contact_success(mock_create, mock_get_email, mock_user):
+def test_service_create_contact_success(mock_create, mock_get_email, mock_notify, mock_user):
     from vaultpass_backend.services.trusted_contact import TrustedContactService
     from vaultpass_backend.schemas.trusted_contact import TrustedContactCreate
     import asyncio
@@ -306,9 +307,10 @@ def test_service_update_contact_duplicate_conflict(mock_get_email, mock_update, 
     assert exc_info.value.status_code == status.HTTP_409_CONFLICT
     assert "already exists" in exc_info.value.detail
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_deleted", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_id", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.delete_contact", new_callable=AsyncMock)
-def test_service_delete_contact_success(mock_delete, mock_get_id, mock_user):
+def test_service_delete_contact_success(mock_delete, mock_get_id, mock_notify_deleted, mock_user):
     from vaultpass_backend.services.trusted_contact import TrustedContactService
     import asyncio
 
