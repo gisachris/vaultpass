@@ -8,6 +8,8 @@ from vaultpass_backend.database.connection import Base
 if TYPE_CHECKING:
     from vaultpass_backend.models.document import Document
     from vaultpass_backend.models.trusted_contact import TrustedContact
+    from vaultpass_backend.models.document_share import DocumentShare
+    from vaultpass_backend.models.notification import Notification
 
 class User(Base):
     """
@@ -54,6 +56,16 @@ class User(Base):
     trusted_contacts: Mapped[List["TrustedContact"]] = relationship(
         "TrustedContact",
         back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+    shares: Mapped[List["DocumentShare"]] = relationship(
+        "DocumentShare",
+        back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+    notifications: Mapped[List["Notification"]] = relationship(
+        "Notification",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
 
