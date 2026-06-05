@@ -51,8 +51,9 @@ def test_upload_document_validation_oversized(override_auth_dependency):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "exceeds maximum limit" in response.json()["detail"]
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_uploaded", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.document_service.storage_service.upload_file", new_callable=AsyncMock)
-def test_service_upload_document_success(mock_upload, mock_user):
+def test_service_upload_document_success(mock_upload, mock_notify_uploaded, mock_user):
     from vaultpass_backend.services.document_service import upload_document
     import asyncio
     
@@ -309,7 +310,8 @@ def test_service_get_documents_success(mock_user):
     assert items == [mock_doc]
     assert total == 1
 
-def test_service_update_document_success(mock_user):
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_updated", new_callable=AsyncMock)
+def test_service_update_document_success(mock_notify_updated, mock_user):
     from vaultpass_backend.services.document_service import update_document
     from vaultpass_backend.schemas.document import DocumentUpdateRequest
     import asyncio
@@ -334,8 +336,9 @@ def test_service_update_document_success(mock_user):
     assert updated_doc.title == "New Title"
     mock_db.commit.assert_called_once()
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_deleted", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.document_service.storage_service.delete_file", new_callable=AsyncMock)
-def test_service_delete_document_success(mock_delete_file, mock_user):
+def test_service_delete_document_success(mock_delete_file, mock_notify_deleted, mock_user):
     from vaultpass_backend.services.document_service import delete_document
     import asyncio
     
