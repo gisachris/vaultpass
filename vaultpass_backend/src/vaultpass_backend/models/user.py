@@ -7,6 +7,7 @@ from vaultpass_backend.database.connection import Base
 
 if TYPE_CHECKING:
     from vaultpass_backend.models.document import Document
+    from vaultpass_backend.models.trusted_contact import TrustedContact
 
 class User(Base):
     """
@@ -47,6 +48,11 @@ class User(Base):
     # Relationships
     documents: Mapped[List["Document"]] = relationship(
         "Document",
+        back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+    trusted_contacts: Mapped[List["TrustedContact"]] = relationship(
+        "TrustedContact",
         back_populates="owner",
         cascade="all, delete-orphan"
     )

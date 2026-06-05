@@ -16,6 +16,7 @@ from vaultpass_backend.core.config import settings
 from vaultpass_backend.database.connection import Base
 from vaultpass_backend.models.user import User  # Must import to register model
 from vaultpass_backend.models.document import Document  # Must import to register model
+from vaultpass_backend.models.trusted_contact import TrustedContact  # Must import to register model
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
