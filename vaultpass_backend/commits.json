@@ -1,57 +1,57 @@
 [
   {
-    "date": "2026-06-02T11:00:00+02:00",
-    "message": "ft: add Document database model and document type enum",
+    "date": "2026-06-05T09:37:00+02:00",
+    "message": "ft: add TrustedContact database model and User relationship updates",
     "files": [
-      "src/vaultpass_backend/models/document.py",
+      "src/vaultpass_backend/models/trusted_contact.py",
       "src/vaultpass_backend/models/__init__.py",
       "src/vaultpass_backend/models/user.py",
       "alembic/env.py"
     ]
   },
   {
-    "date": "2026-06-02T13:30:00+02:00",
-    "message": "ft: add alembic migration for documents table",
+    "date": "2026-06-05T09:40:00+02:00",
+    "message": "ft: generate alembic migration for trusted contacts table",
     "files": [
-      "alembic/versions/3fbdfb2d0dec_create_documents_table.py"
+      "alembic/versions/cb75116bd361_add_trusted_contacts_table.py"
     ]
   },
   {
-    "date": "2026-06-02T15:00:00+02:00",
-    "message": "ft: add Supabase Storage integration service",
+    "date": "2026-06-05T09:42:00+02:00",
+    "message": "ft: add trusted contacts request/response pydantic schemas",
     "files": [
-      "src/vaultpass_backend/core/config.py",
-      "src/vaultpass_backend/services/supabase_storage.py"
+      "src/vaultpass_backend/schemas/trusted_contact.py"
     ]
   },
   {
-    "date": "2026-06-02T17:30:00+02:00",
-    "message": "ft: add document request/response pydantic schemas",
+    "date": "2026-06-05T09:44:00+02:00",
+    "message": "ft: add repository layer for trusted contacts database operations",
     "files": [
-      "src/vaultpass_backend/schemas/document.py",
-      "src/vaultpass_backend/schemas/__init__.py"
+      "src/vaultpass_backend/repository/trusted_contact.py",
+      "src/vaultpass_backend/repository/__init__.py"
     ]
   },
   {
-    "date": "2026-06-03T01:30:00+02:00",
-    "message": "ft: implement document service business logic and validations",
+    "date": "2026-06-05T09:46:00+02:00",
+    "message": "ft: add service layer business logic and ownership constraints for trusted contacts",
     "files": [
-      "src/vaultpass_backend/services/document_service.py"
+      "src/vaultpass_backend/services/trusted_contact.py",
+      "src/vaultpass_backend/services/__init__.py"
     ]
   },
   {
-    "date": "2026-06-03T03:00:00+02:00",
-    "message": "ft: add documents API router and register endpoints",
+    "date": "2026-06-05T09:48:00+02:00",
+    "message": "ft: implement trusted contacts api endpoints and register router in main app",
     "files": [
-      "src/vaultpass_backend/api/documents.py",
+      "src/vaultpass_backend/api/trusted_contacts.py",
       "src/vaultpass_backend/main.py"
     ]
   },
   {
-    "date": "2026-06-03T05:30:00+02:00",
-    "message": "test: add comprehensive test suite for document module",
+    "date": "2026-06-05T09:50:00+02:00",
+    "message": "test: add comprehensive test suite for trusted contacts module",
     "files": [
-      "tests/test_documents.py"
+      "tests/test_trusted_contacts.py"
     ]
   }
 ]
