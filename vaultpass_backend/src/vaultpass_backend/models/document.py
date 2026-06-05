@@ -1,13 +1,14 @@
 import enum
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from sqlalchemy import String, Text, DateTime, ForeignKey, Enum as SQLEnum, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from vaultpass_backend.database.connection import Base
 
 if TYPE_CHECKING:
     from vaultpass_backend.models.user import User
+    from vaultpass_backend.models.document_share import DocumentShare
 
 class DocumentType(str, enum.Enum):
     PASSPORT = "PASSPORT"
@@ -83,3 +84,8 @@ class Document(Base):
 
     # Relationships
     owner: Mapped["User"] = relationship("User", back_populates="documents")
+    shares: Mapped[List["DocumentShare"]] = relationship(
+        "DocumentShare",
+        back_populates="document",
+        cascade="all, delete-orphan"
+    )
