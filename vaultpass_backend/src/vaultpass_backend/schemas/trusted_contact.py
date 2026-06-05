@@ -1,0 +1,97 @@
+from datetime import datetime
+from uuid import UUID
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List
+
+class TrustedContactCreate(BaseModel):
+    """
+    Schema for creating a new trusted contact.
+    """
+    full_name: str = Field(
+        ...,
+        min_length=2,
+        max_length=255,
+        description="Full name of the contact (minimum 2 characters)"
+    )
+    email: EmailStr = Field(
+        ...,
+        description="Unique email address for this owner"
+    )
+    phone_number: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="Optional phone number of the contact"
+    )
+    relationship: str = Field(
+        ...,
+        max_length=100,
+        description="Relationship with the owner (e.g. Spouse, Sibling, Friend, Lawyer)"
+    )
+    notes: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Optional additional notes about the contact"
+    )
+
+class TrustedContactUpdate(BaseModel):
+    """
+    Schema for updating a trusted contact. All fields are optional.
+    """
+    full_name: Optional[str] = Field(
+        None,
+        min_length=2,
+        max_length=255,
+        description="Full name of the contact"
+    )
+    email: Optional[EmailStr] = Field(
+        None,
+        description="Email address of the contact"
+    )
+    phone_number: Optional[str] = Field(
+        None,
+        max_length=50,
+        description="Phone number of the contact"
+    )
+    relationship: Optional[str] = Field(
+        None,
+        max_length=100,
+        description="Relationship with the owner"
+    )
+    notes: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Optional additional notes about the contact"
+    )
+
+class TrustedContactResponse(BaseModel):
+    """
+    Schema representing a trusted contact response.
+    """
+    id: UUID
+    full_name: str
+    email: EmailStr
+    phone_number: Optional[str] = None
+    relationship: str
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class TrustedContactCreateResponse(BaseModel):
+    """
+    Schema for creation success response.
+    """
+    message: str = "Trusted contact created successfully"
+    data: TrustedContactResponse
+
+class TrustedContactListResponse(BaseModel):
+    """
+    Paginated schema representing a list of trusted contacts.
+    """
+    items: List[TrustedContactResponse]
+    total: int
+    page: int
+    page_size: int
