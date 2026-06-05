@@ -48,6 +48,11 @@ class TrustedContactService:
 
         created_contact = await TrustedContactRepository.create_contact(db, contact)
         logger.info(f"User {owner_id} created trusted contact {created_contact.id}")
+        
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_contact_added(db, owner_id, created_contact.id, created_contact.full_name)
+        
         return created_contact
 
     @staticmethod
@@ -109,6 +114,11 @@ class TrustedContactService:
 
         updated_contact = await TrustedContactRepository.update_contact(db, contact, update_dict)
         logger.info(f"User {user_id} updated trusted contact {contact_id}")
+        
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_contact_updated(db, user_id, updated_contact.id, updated_contact.full_name)
+        
         return updated_contact
 
     @staticmethod
@@ -122,8 +132,13 @@ class TrustedContactService:
         Verifies ownership.
         """
         contact = await TrustedContactService.get_contact_by_id(db, contact_id, user_id)
+        contact_name = contact.full_name
         await TrustedContactRepository.delete_contact(db, contact)
         logger.info(f"User {user_id} deleted trusted contact {contact_id}")
+        
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_contact_deleted(db, user_id, contact_name)
 
     @staticmethod
     async def list_contacts(
