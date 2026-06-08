@@ -195,10 +195,10 @@ export function DocumentsPage() {
             <span className="material-symbols-outlined">description</span>
             <span>Documents</span>
           </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
+          <Link to="/trusted-contacts" className="documents-sidebar-link">
             <span className="material-symbols-outlined">group</span>
             <span>Trusted Contacts</span>
-          </button>
+          </Link>
           <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
             <span className="material-symbols-outlined">share</span>
             <span>Shared Access</span>
@@ -206,10 +206,10 @@ export function DocumentsPage() {
         </div>
 
         <div className="documents-sidebar-footer">
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
+          <Link to="/notifications" className="documents-sidebar-link">
             <span className="material-symbols-outlined">notifications</span>
             <span>Notifications</span>
-          </button>
+          </Link>
           <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
             <span className="material-symbols-outlined">settings</span>
             <span>Settings</span>
