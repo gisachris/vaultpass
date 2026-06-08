@@ -1,0 +1,286 @@
+{
+  "module": "Trusted Contacts",
+  "base_path": "/api/v1/trusted-contacts",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/",
+      "summary": "Create a new trusted contact",
+      "description": "Allows an authenticated user to add a new contact to their private trusted contacts book. Enforces duplicate email checks per user.",
+      "request_body": {
+        "full_name": {
+          "type": "string",
+          "required": true,
+          "min_length": 2,
+          "max_length": 255,
+          "description": "Full name of the contact"
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "format": "email",
+          "description": "Unique email address for this owner"
+        },
+        "phone_number": {
+          "type": "string",
+          "required": false,
+          "max_length": 50,
+          "description": "Optional phone number"
+        },
+        "relationship": {
+          "type": "string",
+          "required": true,
+          "max_length": 100,
+          "description": "Relationship with owner (e.g., Parent, Spouse, Friend, Lawyer)"
+        },
+        "notes": {
+          "type": "string",
+          "required": false,
+          "max_length": 1000,
+          "description": "Optional additional notes"
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Created successfully",
+          "body": {
+            "message": "Trusted contact created successfully",
+            "data": {
+              "id": "uuid",
+              "full_name": "string",
+              "email": "string",
+              "phone_number": "string | null",
+              "relationship": "string",
+              "notes": "string | null",
+              "created_at": "datetime",
+              "updated_at": "datetime | null"
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict (Duplicate email for this owner)"
+        },
+        "422": {
+          "description": "Validation Error (Invalid input format)"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "summary": "List trusted contacts",
+      "description": "Retrieve a paginated list of trusted contacts owned by the authenticated user.",
+      "query_parameters": {
+        "page": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "description": "Page number to retrieve"
+        },
+        "page_size": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of items per page"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "body": {
+            "items": [
+              {
+                "id": "uuid",
+                "full_name": "string",
+                "email": "string",
+                "phone_number": "string | null",
+                "relationship": "string",
+                "notes": "string | null",
+                "created_at": "datetime",
+                "updated_at": "datetime | null"
+              }
+            ],
+            "total": "integer",
+            "page": "integer",
+            "page_size": "integer"
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "summary": "Search trusted contacts",
+      "description": "Search user's trusted contacts matching full_name, email, or relationship (case-insensitive and paginated).",
+      "query_parameters": {
+        "q": {
+          "type": "string",
+          "required": true,
+          "description": "Search query string"
+        },
+        "page": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "description": "Page number"
+        },
+        "page_size": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Items per page"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "body": {
+            "items": [
+              {
+                "id": "uuid",
+                "full_name": "string",
+                "email": "string",
+                "phone_number": "string | null",
+                "relationship": "string",
+                "notes": "string | null",
+                "created_at": "datetime",
+                "updated_at": "datetime | null"
+              }
+            ],
+            "total": "integer",
+            "page": "integer",
+            "page_size": "integer"
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/{contact_id}",
+      "summary": "Get a trusted contact",
+      "description": "Retrieve detailed information of a specific trusted contact. Enforces ownership authorization.",
+      "path_parameters": {
+        "contact_id": {
+          "type": "uuid",
+          "required": true,
+          "description": "ID of the trusted contact"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "body": {
+            "id": "uuid",
+            "full_name": "string",
+            "email": "string",
+            "phone_number": "string | null",
+            "relationship": "string",
+            "notes": "string | null",
+            "created_at": "datetime",
+            "updated_at": "datetime | null"
+          }
+        },
+        "403": {
+          "description": "Forbidden (Contact owned by another user)"
+        },
+        "404": {
+          "description": "Not Found (Contact does not exist)"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/{contact_id}",
+      "summary": "Update a trusted contact",
+      "description": "Partially update details of an existing trusted contact. Enforces ownership authorization and duplicate email checks.",
+      "path_parameters": {
+        "contact_id": {
+          "type": "uuid",
+          "required": true,
+          "description": "ID of the trusted contact"
+        }
+      },
+      "request_body": {
+        "full_name": {
+          "type": "string",
+          "required": false,
+          "min_length": 2,
+          "max_length": 255
+        },
+        "email": {
+          "type": "string",
+          "required": false,
+          "format": "email"
+        },
+        "phone_number": {
+          "type": "string",
+          "required": false,
+          "max_length": 50
+        },
+        "relationship": {
+          "type": "string",
+          "required": false,
+          "max_length": 100
+        },
+        "notes": {
+          "type": "string",
+          "required": false,
+          "max_length": 1000
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Updated successfully",
+          "body": {
+            "id": "uuid",
+            "full_name": "string",
+            "email": "string",
+            "phone_number": "string | null",
+            "relationship": "string",
+            "notes": "string | null",
+            "created_at": "datetime",
+            "updated_at": "datetime"
+          }
+        },
+        "403": {
+          "description": "Forbidden (Contact owned by another user)"
+        },
+        "404": {
+          "description": "Not Found (Contact does not exist)"
+        },
+        "409": {
+          "description": "Conflict (Duplicate email for this owner)"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/{contact_id}",
+      "summary": "Delete a trusted contact",
+      "description": "Permanently deletes a trusted contact from the database. Enforces ownership authorization.",
+      "path_parameters": {
+        "contact_id": {
+          "type": "uuid",
+          "required": true,
+          "description": "ID of the trusted contact"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Deleted successfully",
+          "body": {
+            "message": "Trusted contact deleted successfully"
+          }
+        },
+        "403": {
+          "description": "Forbidden (Contact owned by another user)"
+        },
+        "404": {
+          "description": "Not Found (Contact does not exist)"
+        }
+      }
+    }
+  ]
+}

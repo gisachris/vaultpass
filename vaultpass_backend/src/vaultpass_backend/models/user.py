@@ -1,8 +1,13 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING, List
 from sqlalchemy import String, Text, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from vaultpass_backend.database.connection import Base
+
+if TYPE_CHECKING:
+    from vaultpass_backend.models.document import Document
+    from vaultpass_backend.models.trusted_contact import TrustedContact
 
 class User(Base):
     """
@@ -39,3 +44,16 @@ class User(Base):
         onupdate=func.now(),
         nullable=True
     )
+
+    # Relationships
+    documents: Mapped[List["Document"]] = relationship(
+        "Document",
+        back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+    trusted_contacts: Mapped[List["TrustedContact"]] = relationship(
+        "TrustedContact",
+        back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+
