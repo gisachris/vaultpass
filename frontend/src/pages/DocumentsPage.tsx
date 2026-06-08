@@ -206,10 +206,10 @@ export function DocumentsPage() {
         </div>
 
         <div className="documents-sidebar-footer">
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
+          <Link to="/notifications" className="documents-sidebar-link">
             <span className="material-symbols-outlined">notifications</span>
             <span>Notifications</span>
-          </button>
+          </Link>
           <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
             <span className="material-symbols-outlined">settings</span>
             <span>Settings</span>

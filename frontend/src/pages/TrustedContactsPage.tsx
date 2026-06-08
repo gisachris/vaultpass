@@ -118,10 +118,13 @@ export function TrustedContactsPage() {
             <span className="material-symbols-outlined">share</span>
             Shared Access
           </button>
-          <button type="button" className="trusted-sidebar-link trusted-sidebar-link--disabled">
+          <Link
+            to="/notifications"
+            className={`trusted-sidebar-link ${location.pathname === '/notifications' ? 'trusted-sidebar-link--active' : ''}`}
+          >
             <span className="material-symbols-outlined">notifications</span>
             Notifications
-          </button>
+          </Link>
           <button type="button" className="trusted-sidebar-link trusted-sidebar-link--disabled">
             <span className="material-symbols-outlined">settings</span>
             Settings

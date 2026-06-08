@@ -4,6 +4,7 @@ import { SignUpPage } from '../pages/SignUpPage';
 import { SignInPage } from '../pages/SignInPage';
 import { DocumentsPage } from '../pages/DocumentsPage';
 import { TrustedContactsPage } from '../pages/TrustedContactsPage';
+import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -63,7 +64,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={
+          <ProtectedRoute>
+            <DocumentsPage />
+          </ProtectedRoute>
+        } />
       <Route path="/signup" element={<SignUpPage />} />
       <Route
         path="/dashboard"
@@ -86,6 +91,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <TrustedContactsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />
