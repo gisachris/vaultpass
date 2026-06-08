@@ -1,0 +1,74 @@
+.notification-filters {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.notification-filters__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.notification-filters__header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.notification-filters__header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.notification-filters__clear {
+  padding: 0.65rem 1rem;
+}
+
+.notification-filters__groups {
+  display: grid;
+  gap: 18px;
+}
+
+.notification-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-filter-group span {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.notification-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.notification-filter-button {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.notification-filter-button--active {
+  background: #2c3e50;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.notification-filter-group--sorting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
