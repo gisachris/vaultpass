@@ -104,6 +104,11 @@ async def upload_document(
         db.add(new_doc)
         await db.commit()
         await db.refresh(new_doc)
+        
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_document_uploaded(db, owner_id, new_doc.id, new_doc.title)
+        
         return new_doc
     except Exception as e:
         # Rollback database transaction and attempt cleanup from Supabase Storage
@@ -217,6 +222,11 @@ async def update_document(
         
     await db.commit()
     await db.refresh(doc)
+    
+    # Trigger notification event
+    from vaultpass_backend.services.notification import NotificationService
+    await NotificationService.notify_document_updated(db, user_id, doc.id, doc.title)
+    
     return doc
 
 async def delete_document(
@@ -232,6 +242,12 @@ async def delete_document(
     # Delete from Supabase Storage first
     await storage_service.delete_file(doc.file_path)
     
+    doc_title = doc.title
+    
     # Delete from DB
     await db.delete(doc)
     await db.commit()
+    
+    # Trigger notification event
+    from vaultpass_backend.services.notification import NotificationService
+    await NotificationService.notify_document_deleted(db, user_id, doc_title)

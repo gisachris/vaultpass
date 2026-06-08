@@ -17,7 +17,7 @@ def file_exists(path):
 
 
 def main():
-    json_file = "commits.json"
+    json_file = "commits_notifications.json"
 
     if not os.path.exists(json_file):
         print(f"Error: {json_file} not found")
