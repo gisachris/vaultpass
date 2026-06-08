@@ -45,3 +45,11 @@ export async function createTrustedContact(
 export async function deleteTrustedContact(contactId: string): Promise<void> {
   await api.delete(`${BASE_PATH}/${contactId}`);
 }
+
+export async function updateTrustedContact(
+  contactId: string,
+  payload: Partial<TrustedContactCreatePayload>,
+): Promise<TrustedContactModel> {
+  const response = await api.patch<TrustedContactModel>(`${BASE_PATH}/${contactId}`, payload);
+  return response.data;
+}

@@ -8,6 +8,7 @@ import { DocumentRow } from '../components/documents/DocumentRow';
 import { UploadDocumentModal } from '../components/documents/UploadDocumentModal';
 import { DocumentDetailsModal } from '../components/documents/DocumentDetailsModal';
 import { EditDocumentModal } from '../components/documents/EditDocumentModal';
+import { ShareDocumentModal } from '../components/documents/ShareDocumentModal';
 import './DocumentsPage.css';
 
 export function DocumentsPage() {
@@ -18,6 +19,7 @@ export function DocumentsPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -91,6 +93,11 @@ export function DocumentsPage() {
   const handleEditDocument = (document: DocumentModel) => {
     setSelectedDocument(document);
     setEditOpen(true);
+  };
+
+  const handleShareDocument = (document: DocumentModel) => {
+    setSelectedDocument(document);
+    setShareOpen(true);
   };
 
   const handleDownloadDocument = async (document: DocumentModel) => {
@@ -199,10 +206,10 @@ export function DocumentsPage() {
             <span className="material-symbols-outlined">group</span>
             <span>Trusted Contacts</span>
           </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
+          <Link to="/shared-access" className="documents-sidebar-link">
             <span className="material-symbols-outlined">share</span>
             <span>Shared Access</span>
-          </button>
+          </Link>
         </div>
 
         <div className="documents-sidebar-footer">
@@ -338,6 +345,7 @@ export function DocumentsPage() {
                   onDownload={handleDownloadDocument}
                   onEdit={handleEditDocument}
                   onDelete={requestDeleteDocument}
+                  onShare={handleShareDocument}
                 />
               ))
             )}
@@ -440,6 +448,12 @@ export function DocumentsPage() {
           }
           return Promise.resolve();
         }}
+      />
+
+      <ShareDocumentModal
+        open={shareOpen}
+        document={selectedDocument}
+        onClose={() => setShareOpen(false)}
       />
     </div>
   );

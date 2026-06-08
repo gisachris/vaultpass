@@ -398,6 +398,10 @@
   position: relative;
 }
 
+.document-row--menu-open {
+  z-index: 10;
+}
+
 .document-row:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
@@ -557,12 +561,15 @@
 
 .documents-modal-window {
   width: min(760px, 100%);
-  max-height: calc(100vh - 96px);
   margin-top: 20px;
+  margin-bottom: 20px;
   background: #ffffff;
   border-radius: 1.25rem;
-  overflow: scroll;
+  overflow: hidden;
   box-shadow: 0 32px 60px rgba(15, 23, 42, 0.18);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .documents-modal-header {
@@ -597,6 +604,7 @@
   padding: 24px 28px 28px;
   display: grid;
   gap: 20px;
+  overflow-y: auto;
 }
 
 .documents-modal-row {

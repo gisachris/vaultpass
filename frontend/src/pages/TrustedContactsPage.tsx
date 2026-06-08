@@ -1,9 +1,10 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { createTrustedContact } from '../services/trustedContactsService';
+import { createTrustedContact, deleteTrustedContact, updateTrustedContact } from '../services/trustedContactsService';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { TrustedContactCreatePayload } from '../types/trustedContact';
+import { TrustedContactCreatePayload, TrustedContactModel } from '../types/trustedContact';
+import { api } from '../lib/api';
 import './TrustedContactsPage.css';
 
 function formatDate(dateString: string) {
@@ -49,6 +50,35 @@ export function TrustedContactsPage() {
     notes: '',
   });
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<TrustedContactModel | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<TrustedContactModel | null>(null);
+  const [showInviteConfirmation, setShowInviteConfirmation] = useState(false);
+  const [editForm, setEditForm] = useState<TrustedContactCreatePayload>({
+    full_name: '',
+    email: '',
+    phone_number: '',
+    relationship: '',
+    notes: '',
+  });
+
+  useEffect(() => {
+    if (!activeMenuId) {
+      return;
+    }
+
+    const handleClickOutside = () => {
+      setActiveMenuId(null);
+    };
+
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [activeMenuId]);
+
   const recentCount = useMemo(() => {
     const now = Date.now();
     const thirtyDays = 1000 * 60 * 60 * 24 * 30;
@@ -63,6 +93,34 @@ export function TrustedContactsPage() {
     }));
   };
 
+  const createTrustedContactDirectly = async () => {
+    setSubmitting(true);
+    setInvitationError('');
+    try {
+      await createTrustedContact({
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        phone_number: form.phone_number ? form.phone_number.trim() : undefined,
+        relationship: form.relationship.trim(),
+        notes: form.notes ? form.notes.trim() : undefined,
+      });
+      toast.success('Trusted contact added successfully.');
+      setInviteOpen(false);
+      setShowInviteConfirmation(false);
+      setForm({ full_name: '', email: '', phone_number: '', relationship: '', notes: '' });
+      await refresh();
+    } catch (err: any) {
+      setInvitationError(err.response?.data?.detail || 'Unable to add trusted contact.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleConfirmInvite = async () => {
+    toast.success(`Invitation email sent to ${form.email.trim()}!`);
+    await createTrustedContactDirectly();
+  };
+
   const handleInviteSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setInvitationError('');
@@ -75,21 +133,90 @@ export function TrustedContactsPage() {
     setSubmitting(true);
 
     try {
-      await createTrustedContact({
-        full_name: form.full_name.trim(),
-        email: form.email.trim(),
-        phone_number: form.phone_number ? form.phone_number.trim() : undefined,
-        relationship: form.relationship.trim(),
-        notes: form.notes ? form.notes.trim() : undefined,
+      const checkResponse = await api.get<{ exists: boolean }>('/auth/check-email', {
+        params: { email: form.email.trim() }
       });
-      toast.success('Trusted contact added successfully.');
-      setInviteOpen(false);
-      setForm({ full_name: '', email: '', phone_number: '', relationship: '', notes: '' });
+
+      if (!checkResponse.data.exists) {
+        setShowInviteConfirmation(true);
+        setSubmitting(false);
+        return;
+      }
+
+      await createTrustedContactDirectly();
+    } catch (err: any) {
+      setInvitationError(err.response?.data?.detail || 'Unable to verify email or add contact.');
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditClick = (contact: TrustedContactModel) => {
+    setSelectedContact(contact);
+    setEditForm({
+      full_name: contact.full_name,
+      email: contact.email,
+      phone_number: contact.phone_number || '',
+      relationship: contact.relationship,
+      notes: contact.notes || '',
+    });
+    setEditOpen(true);
+    setActiveMenuId(null);
+  };
+
+  const handleEditInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setEditForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleEditSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedContact) return;
+
+    setSubmitting(true);
+    try {
+      await updateTrustedContact(selectedContact.id, {
+        full_name: editForm.full_name.trim(),
+        email: editForm.email.trim(),
+        phone_number: editForm.phone_number ? editForm.phone_number.trim() : undefined,
+        relationship: editForm.relationship.trim(),
+        notes: editForm.notes ? editForm.notes.trim() : undefined,
+      });
+      toast.success('Trusted contact updated successfully.');
+      setEditOpen(false);
+      setSelectedContact(null);
       await refresh();
     } catch (err: any) {
-      setInvitationError(err.response?.data?.detail || 'Unable to add trusted contact.');
+      toast.error(err.response?.data?.detail || 'Unable to update contact.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (contact: TrustedContactModel) => {
+    setPendingDelete(contact);
+    setDeleteError('');
+    setConfirmDeleteOpen(true);
+    setActiveMenuId(null);
+  };
+
+  const confirmDeleteContact = async () => {
+    if (!pendingDelete) return;
+
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteTrustedContact(pendingDelete.id);
+      toast.success('Trusted contact deleted successfully.');
+      setConfirmDeleteOpen(false);
+      setPendingDelete(null);
+      await refresh();
+    } catch (err: any) {
+      setDeleteError(err.response?.data?.detail || 'Unable to delete contact.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -216,6 +343,29 @@ export function TrustedContactsPage() {
                 <div className="trusted-contact-cards">
                   {contacts.map((contact) => (
                     <article className="trusted-contact-card" key={contact.id}>
+                      <div className="contact-card-actions">
+                        <button
+                          type="button"
+                          className="contact-card-action-button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setActiveMenuId((current) => (current === contact.id ? null : contact.id));
+                          }}
+                          aria-label="Contact options"
+                        >
+                          <span className="material-symbols-outlined">more_vert</span>
+                        </button>
+                        {activeMenuId === contact.id && (
+                          <div className="contact-card-menu" role="menu">
+                            <button type="button" onClick={() => handleEditClick(contact)}>
+                              Edit details
+                            </button>
+                            <button type="button" onClick={() => handleDeleteClick(contact)}>
+                              Delete contact
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <div className="trusted-contact-meta">
                         <div className="trusted-contact-avatar">{getInitials(contact.full_name)}</div>
                         <div>
@@ -336,10 +486,163 @@ export function TrustedContactsPage() {
                   Cancel
                 </button>
                 <button type="submit" className="button button-primary" disabled={submitting}>
-                  {submitting ? 'Inviting…' : 'Invite contact'}
+                  {submitting ? 'Verifying…' : 'Invite contact'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showInviteConfirmation && (
+        <div className="documents-modal-overlay" onClick={() => setShowInviteConfirmation(false)}>
+          <div className="documents-modal-window" onClick={(event) => event.stopPropagation()}>
+            <div className="documents-modal-header">
+              <div>
+                <h2>User not found on platform</h2>
+                <p>Send an invitation to join VaultPass.</p>
+              </div>
+              <button type="button" className="documents-modal-close" onClick={() => setShowInviteConfirmation(false)} aria-label="Close confirmation dialog">
+                ×
+              </button>
+            </div>
+
+            <div className="documents-modal-body">
+              <p>
+                The email <strong>{form.email}</strong> is not currently registered on VaultPass.
+              </p>
+              <p>
+                Would you like to send an invitation email to sign up? They will receive an invitation to access your shared documents once they register.
+              </p>
+            </div>
+
+            <div className="documents-modal-actions">
+              <button type="button" className="button button-secondary" onClick={() => setShowInviteConfirmation(false)} disabled={submitting}>
+                Cancel
+              </button>
+              <button type="button" className="button button-primary" onClick={handleConfirmInvite} disabled={submitting}>
+                {submitting ? 'Sending…' : 'Send Invite & Add Contact'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editOpen && selectedContact && (
+        <div className="documents-modal-overlay" onClick={() => { setEditOpen(false); setSelectedContact(null); }}>
+          <div className="documents-modal-window" onClick={(event) => event.stopPropagation()}>
+            <div className="documents-modal-header">
+              <div>
+                <h2>Edit trusted contact</h2>
+                <p>Update contact information and details.</p>
+              </div>
+              <button type="button" className="documents-modal-close" onClick={() => { setEditOpen(false); setSelectedContact(null); }} aria-label="Close edit dialog">
+                ×
+              </button>
+            </div>
+
+            <form className="documents-modal-body" onSubmit={handleEditSubmit}>
+              <div className="documents-modal-row documents-modal-row--full">
+                <label htmlFor="edit-trusted-full_name">Full name</label>
+                <input
+                  id="edit-trusted-full_name"
+                  name="full_name"
+                  value={editForm.full_name}
+                  onChange={handleEditInputChange}
+                  placeholder="Example: Jane Doe"
+                  required
+                />
+              </div>
+
+              <div className="documents-modal-row documents-modal-row--full">
+                <label htmlFor="edit-trusted-email">Email address</label>
+                <input
+                  id="edit-trusted-email"
+                  name="email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={handleEditInputChange}
+                  placeholder="name@company.com"
+                  required
+                />
+              </div>
+
+              <div className="documents-modal-row documents-modal-row--full">
+                <label htmlFor="edit-trusted-relationship">Relationship</label>
+                <input
+                  id="edit-trusted-relationship"
+                  name="relationship"
+                  value={editForm.relationship}
+                  onChange={handleEditInputChange}
+                  placeholder="Spouse, Lawyer, Friend"
+                  required
+                />
+              </div>
+
+              <div className="documents-modal-row documents-modal-row--full">
+                <label htmlFor="edit-trusted-phone_number">Phone number</label>
+                <input
+                  id="edit-trusted-phone_number"
+                  name="phone_number"
+                  value={editForm.phone_number}
+                  onChange={handleEditInputChange}
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div className="documents-modal-row documents-modal-row--full">
+                <label htmlFor="edit-trusted-notes">Notes</label>
+                <textarea
+                  id="edit-trusted-notes"
+                  name="notes"
+                  rows={4}
+                  value={editForm.notes}
+                  onChange={handleEditInputChange}
+                  placeholder="Optional details for this contact"
+                />
+              </div>
+
+              <div className="documents-modal-actions">
+                <button type="button" className="button button-secondary" onClick={() => { setEditOpen(false); setSelectedContact(null); }} disabled={submitting}>
+                  Cancel
+                </button>
+                <button type="submit" className="button button-primary" disabled={submitting}>
+                  {submitting ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteOpen && pendingDelete && (
+        <div className="documents-modal-overlay" onClick={() => { setConfirmDeleteOpen(false); setPendingDelete(null); }}>
+          <div className="documents-modal-window" onClick={(event) => event.stopPropagation()}>
+            <div className="documents-modal-header">
+              <div>
+                <h2>Delete trusted contact</h2>
+                <p>Confirm before removing this contact from your list.</p>
+              </div>
+              <button type="button" className="documents-modal-close" onClick={() => { setConfirmDeleteOpen(false); setPendingDelete(null); }} aria-label="Close delete confirmation dialog">
+                ×
+              </button>
+            </div>
+
+            <div className="documents-modal-body">
+              <p>
+                Are you sure you want to delete <strong>{pendingDelete.full_name}</strong>? This will also revoke any active document shares with them.
+              </p>
+              {deleteError && <div className="documents-modal-error">{deleteError}</div>}
+            </div>
+
+            <div className="documents-modal-actions">
+              <button type="button" className="button button-secondary" onClick={() => { setConfirmDeleteOpen(false); setPendingDelete(null); }} disabled={deleting}>
+                Cancel
+              </button>
+              <button type="button" className="button button-primary" onClick={confirmDeleteContact} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete contact'}
+              </button>
+            </div>
           </div>
         </div>
       )}

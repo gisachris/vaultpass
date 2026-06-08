@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.core.dependencies import get_db, get_current_user
@@ -71,3 +71,20 @@ async def get_me(
     Retrieve user metadata for the currently active session using standard JWT authorization header.
     """
     return UserResponse.model_validate(current_user)
+
+@router.get(
+    "/check-email",
+    status_code=status.HTTP_200_OK,
+    summary="Check if email exists",
+    response_description="Flag indicating if the email exists on the platform"
+)
+async def check_email(
+    email: str = Query(..., description="Email address to check"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check if a user with the given email address exists.
+    """
+    user = await auth_service.get_user_by_email(db, email.lower().strip())
+    return {"exists": user is not None}

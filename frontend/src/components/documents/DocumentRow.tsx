@@ -7,6 +7,7 @@ interface DocumentRowProps {
   onDownload: (document: DocumentModel) => void;
   onEdit: (document: DocumentModel) => void;
   onDelete: (document: DocumentModel) => void;
+  onShare: (document: DocumentModel) => void;
 }
 
 function getExpiryStatus(document: DocumentModel) {
@@ -35,7 +36,7 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDelete }: DocumentRowProps) {
+export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDelete, onShare }: DocumentRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const expiry = useMemo(() => getExpiryStatus(document), [document]);
@@ -62,7 +63,7 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
   const isExpired = expiry.style === 'expired';
 
   return (
-    <div className={`document-row ${isExpired ? 'document-row--expired' : ''}`}>
+    <div className={`document-row ${isExpired ? 'document-row--expired' : ''} ${menuOpen ? 'document-row--menu-open' : ''}`}>
       <div className="document-row-left" onClick={() => onViewDetails(document)}>
         <div className="document-row-avatar">
           <span className="material-symbols-outlined">{DOCUMENT_TYPE_ICONS[document.document_type]}</span>
@@ -105,6 +106,9 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
               </button>
               <button type="button" onClick={() => { setMenuOpen(false); onEdit(document); }}>
                 Edit details
+              </button>
+              <button type="button" onClick={() => { setMenuOpen(false); onShare(document); }}>
+                Share document
               </button>
               <button type="button" onClick={() => { setMenuOpen(false); onDelete(document); }}>
                 Delete
