@@ -1,10 +1,25 @@
-export async function fetcher<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
+import axios from 'axios';
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || 'API request failed');
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor to add access token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('vaultpass_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  return response.json();
-}
