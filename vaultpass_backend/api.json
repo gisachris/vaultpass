@@ -1328,6 +1328,86 @@
         "allow_profile_visibility": false,
         "allow_contact_visibility": false
       }
+    },
+    {
+      "name": "Dashboard",
+      "base_path": "/api/dashboard",
+      "description": "Single aggregated endpoint that collects and summarises data from all VaultPass modules (Documents, Trusted Contacts, Shared Access, Notifications, Audit Logs, Settings) and returns the complete dashboard payload in one request. The dashboard owns no data and creates no records.",
+      "authentication": "Bearer JWT required",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "Get user dashboard",
+          "description": "Returns a complete, aggregated dashboard snapshot for the authenticated user. Uses two-phase async concurrency internally: independent queries run in parallel in Phase 1, then document expiry queries (which depend on the user's reminder_days setting) run in parallel in Phase 2. All data is scoped exclusively to the current user — no cross-user access is possible.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "summary": {
+                  "total_documents": "integer",
+                  "trusted_contacts": "integer",
+                  "active_shares": "integer",
+                  "unread_notifications": "integer"
+                },
+                "document_health": {
+                  "valid_documents": "integer — documents with no expiry date or a future expiry date",
+                  "expiring_soon": "integer — documents expiring within the user's document_reminder_days window",
+                  "expired_documents": "integer — documents whose expiry date has already passed"
+                },
+                "categories": [
+                  {
+                    "category": "string — DocumentType enum value (e.g. PASSPORT, NATIONAL_ID, WILL, OTHER)",
+                    "count": "integer"
+                  }
+                ],
+                "expiring_documents": [
+                  {
+                    "document_id": "uuid",
+                    "document_name": "string",
+                    "category": "string",
+                    "expiry_date": "datetime (ISO 8601)",
+                    "days_remaining": "integer — computed as (expiry_date - now).days, minimum 0"
+                  }
+                ],
+                "recent_activity": [
+                  {
+                    "action": "string — audit log action constant (e.g. DOCUMENT_CREATED, LOGIN)",
+                    "description": "string",
+                    "created_at": "datetime (ISO 8601)"
+                  }
+                ],
+                "recent_notifications": [
+                  {
+                    "id": "uuid",
+                    "title": "string",
+                    "message": "string",
+                    "is_read": "boolean",
+                    "created_at": "datetime (ISO 8601)"
+                  }
+                ],
+                "account_overview": {
+                  "account_created": "datetime (ISO 8601)",
+                  "last_login": "datetime (ISO 8601) | null",
+                  "storage_used_mb": "float — total storage consumed by the user's documents, rounded to 1 decimal place"
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized (missing or invalid token, or deactivated account)"
+            }
+          },
+          "notes": {
+            "categories_sort": "Sorted descending by count — ready to feed directly into a pie chart",
+            "expiring_documents_sort": "Sorted ascending by expiry_date (soonest first), limited to top 10",
+            "recent_activity_limit": 20,
+            "recent_notifications_limit": 10,
+            "reminder_window": "expiring_soon and expiring_documents use the user's settings.document_reminder_days (default 30) as the lookahead window",
+            "no_audit_on_view": "Dashboard GET does not produce an audit log entry — it is a read-only aggregation",
+            "storage_units": "storage_used_mb is in megabytes (1 MB = 1,048,576 bytes)"
+          }
+        }
+      ]
     }
   ]
 }

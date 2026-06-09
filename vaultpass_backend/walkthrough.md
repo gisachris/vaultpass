@@ -332,3 +332,151 @@ poetry run pytest -v
 
 All 86 tests (18 settings + 68 previously existing) pass cleanly.
 
+---
+
+# Walkthrough: Dashboard Module
+
+This section describes the complete Dashboard Module — the final major backend module — added on top of the existing VaultPass backend.
+
+---
+
+## 1. Architecture Overview
+
+The dashboard is a **pure aggregation layer**. It owns no data, creates no DB records, and requires no migration.
+
+```
+API Router (api/dashboard_router.py)
+    └── DashboardService (services/dashboard_service.py)
+            ├── AuditLogRepository    ← recent_activity
+            ├── NotificationRepository ← recent_notifications + unread count
+            ├── SettingsRepository    ← reminder_days
+            └── Direct model queries  ← document counts, categories, storage
+```
+
+---
+
+## 2. New Files
+
+| File | Role |
+|---|---|
+| [`schemas/dashboard.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/schemas/dashboard.py) | 8 Pydantic response schemas composing `DashboardResponse` |
+| [`services/dashboard_service.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/dashboard_service.py) | `DashboardService.get_dashboard()` with two-phase async concurrency |
+| [`api/dashboard_router.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/api/dashboard_router.py) | Single `GET /api/dashboard/` endpoint |
+| [`tests/test_dashboard.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/tests/test_dashboard.py) | 11 unit tests |
+
+---
+
+## 3. Modified Files
+
+| File | Change |
+|---|---|
+| [`main.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/main.py) | Imports and registers `dashboard_router` at `/api/dashboard` |
+| [`api.json`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/api.json) | Added Dashboard module spec with full response body shape and frontend notes |
+
+---
+
+## 4. API Endpoint
+
+### `GET /api/dashboard/`
+
+Returns the complete dashboard payload in a single request.
+
+**Response shape:**
+
+```json
+{
+  "summary": {
+    "total_documents": 10,
+    "trusted_contacts": 3,
+    "active_shares": 2,
+    "unread_notifications": 4
+  },
+  "document_health": {
+    "valid_documents": 7,
+    "expiring_soon": 2,
+    "expired_documents": 1
+  },
+  "categories": [
+    { "category": "PASSPORT", "count": 5 },
+    { "category": "NATIONAL_ID", "count": 3 }
+  ],
+  "expiring_documents": [
+    {
+      "document_id": "uuid",
+      "document_name": "My Passport",
+      "category": "PASSPORT",
+      "expiry_date": "2026-06-24T00:00:00Z",
+      "days_remaining": 15
+    }
+  ],
+  "recent_activity": [
+    {
+      "action": "DOCUMENT_CREATED",
+      "description": "Document 'Passport' uploaded.",
+      "created_at": "2026-06-09T10:00:00Z"
+    }
+  ],
+  "recent_notifications": [
+    {
+      "id": "uuid",
+      "title": "Document Uploaded",
+      "message": "Passport uploaded successfully.",
+      "is_read": false,
+      "created_at": "2026-06-09T10:00:00Z"
+    }
+  ],
+  "account_overview": {
+    "account_created": "2026-03-10T08:00:00Z",
+    "last_login": "2026-06-09T08:00:00Z",
+    "storage_used_mb": 12.5
+  }
+}
+```
+
+---
+
+## 5. Concurrency Strategy
+
+`DashboardService` uses **two-phase `asyncio.gather`** to minimise latency:
+
+**Phase 1 — fully independent (run concurrently):**
+- Summary counts (documents, contacts, active shares, unread notifications)
+- `reminder_days` from `SettingsRepository`
+- Recent activity (20 records from `AuditLogRepository`)
+- Recent notifications (10 records from `NotificationRepository`)
+
+**Phase 2 — depend on `reminder_days` (run concurrently with each other):**
+- Document health (`valid`, `expiring_soon`, `expired` counts)
+- Category breakdown (`GROUP BY document_type`)
+- Expiring documents list (top 10, soonest first)
+- Storage used MB (`SUM(file_size)` → converted to MB)
+
+---
+
+## 6. Key Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| Single endpoint `GET /api/dashboard/` | Frontend loads the entire dashboard in one HTTP round-trip |
+| No repository, no model, no migration | Dashboard is pure aggregation — data lives in existing tables |
+| Two-phase gather | `reminder_days` must be known before expiry queries; all other queries are concurrent |
+| `days_remaining` computed in Python | `(expiry_date - now()).days` — avoids a DB function and keeps queries simple |
+| `storage_used_mb` rounded to 1 dp | Sufficient precision for a UI display card |
+| No audit log on view | Read-only endpoint — logging would create meaningless noise in the audit trail |
+| `expiring_soon` uses `document_reminder_days` | Per-user configurable; defaults to 30 if no settings row exists |
+
+---
+
+## 7. Test Results
+
+```bash
+poetry run pytest tests/test_dashboard.py -v
+# 11 passed
+
+poetry run pytest -v
+# 97 passed, 202 warnings in ~25s
+```
+
+All 97 tests (11 dashboard + 86 previously existing) pass cleanly.
+
+
