@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   fetchDocumentShares,
@@ -12,6 +12,8 @@ import { fetchDocuments } from '../services/documentService';
 import { fetchTrustedContacts } from '../services/trustedContactsService';
 import { DocumentModel } from '../types/document';
 import { TrustedContactModel } from '../types/trustedContact';
+import { AppSidebar } from '../components/ui/AppSidebar';
+import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './SharedAccessPage.css';
 
 export function SharedAccessPage() {
@@ -100,51 +102,14 @@ export function SharedAccessPage() {
 
   return (
     <div className="shares-page">
-      <aside className="shares-sidebar">
-        <div className="shares-logo">
-          <span>VaultPass</span>
-          <span>Secure Document Vault</span>
-        </div>
-
-        <nav className="shares-sidebar-links">
-          <Link to="/dashboard" className={`shares-sidebar-link ${location.pathname === '/dashboard' ? 'shares-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/documents" className={`shares-sidebar-link ${location.pathname === '/documents' ? 'shares-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">description</span>
-            <span>Documents</span>
-          </Link>
-          <Link to="/trusted-contacts" className={`shares-sidebar-link ${location.pathname === '/trusted-contacts' ? 'shares-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">group</span>
-            <span>Trusted Contacts</span>
-          </Link>
-          <Link to="/shared-access" className="shares-sidebar-link shares-sidebar-link--active">
-            <span className="material-symbols-outlined">share</span>
-            <span>Shared Access</span>
-          </Link>
-          <Link to="/notifications" className="shares-sidebar-link">
-            <span className="material-symbols-outlined">notifications</span>
-            <span>Notifications</span>
-          </Link>
-          <button type="button" className="shares-sidebar-link shares-sidebar-link--disabled">
-            <span className="material-symbols-outlined">settings</span>
-            <span>Settings</span>
-          </button>
-        </nav>
-      </aside>
+      <AppSidebar />
 
       <div className="shares-main">
         <header className="shares-topbar">
           <div className="shares-topbar-title">
             <h1>Shared Access Logs</h1>
           </div>
-          <div className="shares-profile">
-            <img
-              src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=256&q=80"
-              alt="User profile"
-            />
-          </div>
+          <UserProfileMenu variant="topbar" />
         </header>
 
         <main className="shares-canvas">

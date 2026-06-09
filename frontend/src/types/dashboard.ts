@@ -3,6 +3,7 @@ export interface DashboardSummary {
   trusted_contacts: number;
   active_shares: number;
   unread_notifications: number;
+  shared_with_me_count: number;
 }
 
 export interface DocumentHealth {
@@ -38,6 +39,13 @@ export interface RecentNotification {
   created_at: string;
 }
 
+export interface SharedWithMeDocument {
+  share_id: string;
+  document_title: string;
+  owner_name: string;
+  shared_at: string;
+}
+
 export interface AccountOverview {
   account_created: string;
   last_login: string | null;
@@ -51,5 +59,6 @@ export interface DashboardData {
   expiring_documents: ExpiringDocument[];
   recent_activity: RecentActivity[];
   recent_notifications: RecentNotification[];
+  recent_shared_documents: SharedWithMeDocument[];
   account_overview: AccountOverview;
 }

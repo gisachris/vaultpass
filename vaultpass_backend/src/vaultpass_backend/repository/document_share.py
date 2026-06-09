@@ -120,3 +120,62 @@ class DocumentShareRepository:
         await db.commit()
         await db.refresh(share)
         return share
+
+    @staticmethod
+    async def get_received_shares(
+        db: AsyncSession, recipient_user_id: uuid.UUID
+    ) -> List[DocumentShare]:
+        """
+        Retrieve all active document shares where the authenticated user is
+        the designated recipient. Preloads document and owner for response mapping.
+        Ordered newest-first.
+        """
+        query = (
+            select(DocumentShare)
+            .where(DocumentShare.recipient_user_id == recipient_user_id)
+            .options(
+                selectinload(DocumentShare.document),
+                selectinload(DocumentShare.owner),
+            )
+            .order_by(DocumentShare.created_at.desc())
+        )
+        result = await db.execute(query)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def get_received_share_by_id(
+        db: AsyncSession, share_id: uuid.UUID, recipient_user_id: uuid.UUID
+    ) -> Optional[DocumentShare]:
+        """
+        Retrieve a single received share by ID, verifying the recipient matches.
+        Preloads document and owner.
+        """
+        query = (
+            select(DocumentShare)
+            .where(
+                DocumentShare.id == share_id,
+                DocumentShare.recipient_user_id == recipient_user_id,
+            )
+            .options(
+                selectinload(DocumentShare.document),
+                selectinload(DocumentShare.owner),
+            )
+        )
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def count_received_shares(
+        db: AsyncSession, recipient_user_id: uuid.UUID
+    ) -> int:
+        """
+        Count all document shares received by the authenticated user.
+        """
+        from sqlalchemy import func
+        query = (
+            select(func.count())
+            .select_from(DocumentShare)
+            .where(DocumentShare.recipient_user_id == recipient_user_id)
+        )
+        result = await db.execute(query)
+        return result.scalar() or 0

@@ -45,6 +45,7 @@ def test_router_create_share_success(mock_create_share, override_auth_dependency
     mock_share.access_token = "secure_token"
     mock_share.share_link = "https://vaultpass.app/shared/secure_token"
     mock_share.is_active = True
+    mock_share.recipient_user_id = None
     mock_share.expires_at = None
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -75,6 +76,7 @@ def test_router_list_shares(mock_get_my_shares, override_auth_dependency, mock_u
     mock_share.access_token = "token"
     mock_share.share_link = "https://vaultpass.app/shared/token"
     mock_share.is_active = True
+    mock_share.recipient_user_id = None
     mock_share.expires_at = None
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -98,6 +100,7 @@ def test_router_get_share_details(mock_get_share, override_auth_dependency, mock
     mock_share.access_token = "token"
     mock_share.share_link = "https://vaultpass.app/shared/token"
     mock_share.is_active = True
+    mock_share.recipient_user_id = None
     mock_share.expires_at = None
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -120,6 +123,7 @@ def test_router_update_share(mock_update, override_auth_dependency, mock_user):
     mock_share.access_token = "token"
     mock_share.share_link = "https://vaultpass.app/shared/token"
     mock_share.is_active = False
+    mock_share.recipient_user_id = None
     mock_share.expires_at = datetime.now(timezone.utc)
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -146,6 +150,7 @@ def test_router_revoke_share(mock_revoke, override_auth_dependency, mock_user):
     mock_share.access_token = "token"
     mock_share.share_link = "https://vaultpass.app/shared/token"
     mock_share.is_active = False
+    mock_share.recipient_user_id = None
     mock_share.expires_at = None
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -168,6 +173,7 @@ def test_router_activate_share(mock_activate, override_auth_dependency, mock_use
     mock_share.access_token = "token"
     mock_share.share_link = "https://vaultpass.app/shared/token"
     mock_share.is_active = True
+    mock_share.recipient_user_id = None
     mock_share.expires_at = None
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -199,6 +205,7 @@ def test_router_list_shares_for_document(mock_get_shares, override_auth_dependen
     mock_share.access_token = "token"
     mock_share.share_link = "https://vaultpass.app/shared/token"
     mock_share.is_active = True
+    mock_share.recipient_user_id = None
     mock_share.expires_at = None
     mock_share.last_accessed_at = None
     mock_share.created_at = datetime.now(timezone.utc)
@@ -251,6 +258,7 @@ def test_service_create_share_success(mock_select, mock_notify_shared, mock_user
     mock_contact = MagicMock(spec=TrustedContact)
     mock_contact.id = contact_id
     mock_contact.owner_id = mock_user.id
+    mock_contact.linked_user_id = None  # external contact — forces external share path
 
     mock_db = AsyncMock()
     mock_doc_result = MagicMock()
@@ -402,3 +410,185 @@ def test_service_get_public_share_inactive(mock_get_token):
 
     assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
     assert "link has been deactivated" in exc_info.value.detail
+
+
+# ================= INTERNAL / EXTERNAL SHARE TESTS =================
+
+@patch("vaultpass_backend.services.notification.NotificationService.notify_internal_share_received", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.document_share.select")
+def test_service_create_internal_share(mock_select, mock_notify_internal, mock_user):
+    """When a contact has linked_user_id set, an internal share is created and recipient is notified."""
+    from vaultpass_backend.services.document_share import DocumentShareService
+    from vaultpass_backend.schemas.document_share import CreateDocumentShareRequest
+    from vaultpass_backend.repository.document_share import DocumentShareRepository
+    import asyncio
+
+    doc_id = uuid.uuid4()
+    contact_id = uuid.uuid4()
+    recipient_id = uuid.uuid4()
+
+    mock_doc = MagicMock(spec=Document)
+    mock_doc.id = doc_id
+    mock_doc.owner_id = mock_user.id
+    mock_doc.title = "Passport.pdf"
+
+    mock_contact = MagicMock(spec=TrustedContact)
+    mock_contact.id = contact_id
+    mock_contact.owner_id = mock_user.id
+    mock_contact.full_name = "Jane Smith"
+    mock_contact.linked_user_id = recipient_id  # internal contact
+
+    mock_owner = MagicMock(spec=User)
+    mock_owner.full_name = mock_user.full_name
+
+    mock_db = AsyncMock()
+    doc_result = MagicMock(); doc_result.scalar_one_or_none.return_value = mock_doc
+    contact_result = MagicMock(); contact_result.scalar_one_or_none.return_value = mock_contact
+    owner_result = MagicMock(); owner_result.scalar_one_or_none.return_value = mock_owner
+    mock_db.execute.side_effect = [doc_result, contact_result, owner_result]
+
+    saved_share = MagicMock(spec=DocumentShare)
+    saved_share.id = uuid.uuid4()
+    saved_share.recipient_user_id = recipient_id
+
+    share_data = CreateDocumentShareRequest(document_id=doc_id, contact_id=contact_id)
+
+    async def run_test():
+        with patch.object(DocumentShareRepository, "create_share", new_callable=AsyncMock) as mock_repo_create:
+            mock_repo_create.return_value = saved_share
+            return await DocumentShareService.create_share(mock_db, mock_user.id, share_data)
+
+    result = asyncio.run(run_test())
+    assert result == saved_share
+    # Recipient notification must have been sent
+    mock_notify_internal.assert_called_once()
+    call_kwargs = mock_notify_internal.call_args.kwargs
+    assert call_kwargs["recipient_user_id"] == recipient_id
+    assert "Passport.pdf" in call_kwargs["doc_title"]
+
+
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_shared", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.document_share.select")
+def test_service_create_external_share_unchanged(mock_select, mock_notify_shared, mock_user):
+    """When a contact has no linked_user_id, the existing external share flow is used."""
+    from vaultpass_backend.services.document_share import DocumentShareService
+    from vaultpass_backend.schemas.document_share import CreateDocumentShareRequest
+    from vaultpass_backend.repository.document_share import DocumentShareRepository
+    import asyncio
+
+    doc_id = uuid.uuid4()
+    contact_id = uuid.uuid4()
+
+    mock_doc = MagicMock(spec=Document)
+    mock_doc.id = doc_id
+    mock_doc.owner_id = mock_user.id
+    mock_doc.title = "Insurance.pdf"
+
+    mock_contact = MagicMock(spec=TrustedContact)
+    mock_contact.id = contact_id
+    mock_contact.owner_id = mock_user.id
+    mock_contact.full_name = "Mom"
+    mock_contact.linked_user_id = None  # external contact
+
+    mock_db = AsyncMock()
+    doc_result = MagicMock(); doc_result.scalar_one_or_none.return_value = mock_doc
+    contact_result = MagicMock(); contact_result.scalar_one_or_none.return_value = mock_contact
+    mock_db.execute.side_effect = [doc_result, contact_result]
+
+    saved_share = MagicMock(spec=DocumentShare)
+    saved_share.id = uuid.uuid4()
+    saved_share.recipient_user_id = None
+
+    share_data = CreateDocumentShareRequest(document_id=doc_id, contact_id=contact_id)
+
+    async def run_test():
+        with patch.object(DocumentShareRepository, "create_share", new_callable=AsyncMock) as mock_repo_create:
+            mock_repo_create.return_value = saved_share
+            return await DocumentShareService.create_share(mock_db, mock_user.id, share_data)
+
+    result = asyncio.run(run_test())
+    assert result == saved_share
+    # Original notification must have been sent (not the internal one)
+    mock_notify_shared.assert_called_once()
+
+
+# ================= SHARED-WITH-ME ENDPOINT TESTS =================
+
+@patch("vaultpass_backend.api.document_shares.DocumentShareService.get_shared_with_me", new_callable=AsyncMock)
+def test_router_shared_with_me_list(mock_get_swm, override_auth_dependency, mock_user):
+    """GET /api/v1/shares/shared-with-me returns 200 with a list of received shares."""
+    from vaultpass_backend.schemas.document_share import SharedWithMeResponse
+
+    share_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
+    now = datetime.now(timezone.utc)
+
+    mock_swm = SharedWithMeResponse(
+        share_id=share_id,
+        document_id=doc_id,
+        document_title="Passport.pdf",
+        document_type="PASSPORT",
+        owner_name="John Doe",
+        shared_at=now,
+        expires_at=None,
+        is_active=True,
+    )
+    mock_get_swm.return_value = [mock_swm]
+
+    response = client.get("/api/v1/shares/shared-with-me")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["document_title"] == "Passport.pdf"
+    assert data[0]["owner_name"] == "John Doe"
+    assert data[0]["share_id"] == str(share_id)
+
+
+@patch("vaultpass_backend.api.document_shares.DocumentShareService.get_shared_with_me_detail", new_callable=AsyncMock)
+def test_router_shared_with_me_detail(mock_get_detail, override_auth_dependency, mock_user):
+    """GET /api/v1/shares/shared-with-me/{id} returns 200 with full detail."""
+    from vaultpass_backend.schemas.document_share import SharedWithMeDetailResponse
+
+    share_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
+    owner_id = uuid.uuid4()
+    contact_id = uuid.uuid4()
+    now = datetime.now(timezone.utc)
+
+    mock_detail = SharedWithMeDetailResponse(
+        share_id=share_id,
+        document_id=doc_id,
+        document_title="Insurance.pdf",
+        document_type="INSURANCE",
+        owner_name="John Doe",
+        owner_id=owner_id,
+        contact_id=contact_id,
+        shared_at=now,
+        expires_at=None,
+        is_active=True,
+        last_accessed_at=None,
+    )
+    mock_get_detail.return_value = mock_detail
+
+    response = client.get(f"/api/v1/shares/shared-with-me/{share_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["document_title"] == "Insurance.pdf"
+    assert data["owner_id"] == str(owner_id)
+    assert data["contact_id"] == str(contact_id)
+
+
+@patch("vaultpass_backend.api.document_shares.DocumentShareService.get_shared_with_me_detail", new_callable=AsyncMock)
+def test_router_shared_with_me_unauthorized_blocked(mock_get_detail, override_auth_dependency):
+    """If the share does not belong to the current user, the service raises 404."""
+    from fastapi import HTTPException
+
+    share_id = uuid.uuid4()
+    mock_get_detail.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Shared document not found or you are not the recipient"
+    )
+
+    response = client.get(f"/api/v1/shares/shared-with-me/{share_id}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "recipient" in response.json()["detail"]

@@ -60,11 +60,6 @@
   margin-bottom: 40px;
 }
 
-.dashboard-meta {
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
 /* Overview Cards */
 .dashboard-overview-cards {
   display: grid;
@@ -506,4 +501,112 @@
   .dashboard-card {
     padding: 16px;
   }
+}
+
+/* ─── Metric link ─────────────────────────────────────────────────────────── */
+.metric-link {
+  color: #3d5a80;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.metric-link:hover { text-decoration: underline; }
+
+/* ─── Shared-with-me widget ───────────────────────────────────────────────── */
+.shared-with-me-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shared-with-me-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  transition: background 0.15s;
+}
+
+.shared-with-me-item:hover { background: #f1f5f9; }
+
+.shared-with-me-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.shared-with-me-icon .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: #3d5a80;
+}
+
+.shared-with-me-info { flex: 1; min-width: 0; }
+
+.shared-with-me-info h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shared-with-me-info p {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.shared-with-me-time {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Account overview widget ─────────────────────────────────────────────── */
+.account-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-field .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+
+.account-field-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 0 0 2px;
+  font-weight: 500;
+}
+
+.account-field-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* ─── Dashboard meta ──────────────────────────────────────────────────────── */
+.dashboard-meta {
+  color: #64748b;
+  font-size: 0.95rem;
 }

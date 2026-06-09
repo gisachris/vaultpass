@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 from sqlalchemy import String, Text, DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship as sqla_relationship
 from vaultpass_backend.database.connection import Base
@@ -55,6 +55,11 @@ class TrustedContact(Base):
         onupdate=func.now(),
         nullable=True
     )
+    linked_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
 
     # Unique constraint per owner and email address
     __table_args__ = (
@@ -62,7 +67,8 @@ class TrustedContact(Base):
     )
 
     # Relationships
-    owner: Mapped["User"] = sqla_relationship("User", back_populates="trusted_contacts")
+    owner: Mapped["User"] = sqla_relationship("User", foreign_keys=[owner_id], back_populates="trusted_contacts")
+    linked_user: Mapped[Optional["User"]] = sqla_relationship("User", foreign_keys=[linked_user_id], back_populates="trusted_contact_links")
     shares: Mapped[List["DocumentShare"]] = sqla_relationship(
         "DocumentShare",
         back_populates="contact",

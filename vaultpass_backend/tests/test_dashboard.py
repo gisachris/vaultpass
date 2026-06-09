@@ -44,12 +44,14 @@ def _make_dashboard_response(user):
         ExpiringDocumentResponse,
         RecentActivityResponse,
         RecentNotificationResponse,
+        SharedWithMeDocumentResponse,
         AccountOverviewResponse,
     )
 
     now = datetime.now(timezone.utc)
     doc_id = uuid.uuid4()
     notif_id = uuid.uuid4()
+    share_id = uuid.uuid4()
 
     return DashboardResponse(
         summary=SummaryResponse(
@@ -57,6 +59,7 @@ def _make_dashboard_response(user):
             trusted_contacts=3,
             active_shares=2,
             unread_notifications=4,
+            shared_with_me_count=2,
         ),
         document_health=DocumentHealthResponse(
             valid_documents=7,
@@ -93,6 +96,14 @@ def _make_dashboard_response(user):
                 created_at=now - timedelta(hours=1),
             )
         ],
+        recent_shared_documents=[
+            SharedWithMeDocumentResponse(
+                share_id=share_id,
+                document_title="Insurance.pdf",
+                owner_name="John Doe",
+                shared_at=now - timedelta(hours=3),
+            )
+        ],
         account_overview=AccountOverviewResponse(
             account_created=user.created_at,
             last_login=user.last_login,
@@ -120,6 +131,7 @@ def test_dashboard_loads_successfully(mock_get_dashboard, override_auth_dependen
     assert "expiring_documents" in data
     assert "recent_activity" in data
     assert "recent_notifications" in data
+    assert "recent_shared_documents" in data
     assert "account_overview" in data
 
 
@@ -137,6 +149,7 @@ def test_summary_counts_correct(mock_get_dashboard, override_auth_dependency, mo
     assert summary["trusted_contacts"] == 3
     assert summary["active_shares"] == 2
     assert summary["unread_notifications"] == 4
+    assert summary["shared_with_me_count"] == 2
 
 
 @patch(
@@ -238,6 +251,7 @@ def test_empty_dashboard(mock_get_dashboard, override_auth_dependency, mock_user
             trusted_contacts=0,
             active_shares=0,
             unread_notifications=0,
+            shared_with_me_count=0,
         ),
         document_health=DocumentHealthResponse(
             valid_documents=0,
@@ -248,6 +262,7 @@ def test_empty_dashboard(mock_get_dashboard, override_auth_dependency, mock_user
         expiring_documents=[],
         recent_activity=[],
         recent_notifications=[],
+        recent_shared_documents=[],
         account_overview=AccountOverviewResponse(
             account_created=mock_user.created_at,
             last_login=None,
@@ -304,3 +319,22 @@ def test_user_isolation(mock_get_dashboard, mock_user):
     assert called_user.id == user_a.id
 
     app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch(
+    "vaultpass_backend.api.dashboard_router.DashboardService.get_dashboard",
+    new_callable=AsyncMock,
+)
+def test_dashboard_shared_with_me_count(mock_get_dashboard, override_auth_dependency, mock_user):
+    """Dashboard summary must include shared_with_me_count and recent_shared_documents."""
+    mock_get_dashboard.return_value = _make_dashboard_response(mock_user)
+
+    response = client.get("/api/dashboard/")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert data["summary"]["shared_with_me_count"] == 2
+    assert "recent_shared_documents" in data
+    assert len(data["recent_shared_documents"]) == 1
+    assert data["recent_shared_documents"][0]["document_title"] == "Insurance.pdf"
+    assert data["recent_shared_documents"][0]["owner_name"] == "John Doe"

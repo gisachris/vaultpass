@@ -5,6 +5,8 @@ import { createTrustedContact, deleteTrustedContact, updateTrustedContact } from
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import { TrustedContactCreatePayload, TrustedContactModel } from '../types/trustedContact';
 import { api } from '../lib/api';
+import { AppSidebar } from '../components/ui/AppSidebar';
+import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './TrustedContactsPage.css';
 
 function formatDate(dateString: string) {
@@ -222,49 +224,7 @@ export function TrustedContactsPage() {
 
   return (
     <div className="trusted-contacts-page">
-      <aside className="trusted-sidebar">
-        <div className="trusted-sidebar-branding">
-          <h1>VaultPass</h1>
-          <p>Secure Document Vault</p>
-        </div>
-
-        <nav className="trusted-sidebar-nav">
-          <Link to="/dashboard" className={`trusted-sidebar-link ${location.pathname === '/dashboard' ? 'trusted-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">dashboard</span>
-            Dashboard
-          </Link>
-          <Link to="/documents" className={`trusted-sidebar-link ${location.pathname === '/documents' ? 'trusted-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">description</span>
-            Documents
-          </Link>
-          <Link to="/trusted-contacts" className={`trusted-sidebar-link ${location.pathname === '/trusted-contacts' ? 'trusted-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">group</span>
-            Trusted Contacts
-          </Link>
-          <button type="button" className="trusted-sidebar-link trusted-sidebar-link--primary">
-            <span className="material-symbols-outlined">share</span>
-            Shared Access
-          </button>
-          <Link
-            to="/notifications"
-            className={`trusted-sidebar-link ${location.pathname === '/notifications' ? 'trusted-sidebar-link--active' : ''}`}
-          >
-            <span className="material-symbols-outlined">notifications</span>
-            Notifications
-          </Link>
-          <button type="button" className="trusted-sidebar-link trusted-sidebar-link--disabled">
-            <span className="material-symbols-outlined">settings</span>
-            Settings
-          </button>
-        </nav>
-
-        <div className="trusted-sidebar-footer">
-          <button type="button" className="trusted-sidebar-button" onClick={() => setInviteOpen(true)}>
-            <span className="material-symbols-outlined">upload</span>
-            Upload Document
-          </button>
-        </div>
-      </aside>
+      <AppSidebar />
 
       <div className="trusted-main-content">
         <header className="trusted-topbar">
@@ -281,12 +241,7 @@ export function TrustedContactsPage() {
             <button type="button" className="icon-button" aria-label="Help">
               <span className="material-symbols-outlined">help_outline</span>
             </button>
-            <div className="trusted-avatar">
-              <img
-                src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=256&q=80"
-                alt="User profile"
-              />
-            </div>
+            <UserProfileMenu variant="topbar" />
           </div>
         </header>
 

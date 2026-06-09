@@ -1,6 +1,6 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, computed_field
 from typing import Optional, List
 
 class TrustedContactCreate(BaseModel):
@@ -73,8 +73,15 @@ class TrustedContactResponse(BaseModel):
     phone_number: Optional[str] = None
     relationship: str
     notes: Optional[str] = None
+    linked_user_id: Optional[UUID] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    @computed_field
+    @property
+    def is_registered_user(self) -> bool:
+        """True when this contact is linked to a registered VaultPass account."""
+        return self.linked_user_id is not None
 
     model_config = {
         "from_attributes": True

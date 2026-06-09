@@ -304,6 +304,11 @@ def test_create_contact_triggers_audit_log(mock_repo_create, mock_get_email, moc
     mock_db = AsyncMock()
     mock_get_email.return_value = None
 
+    # Mock the user-lookup db.execute call that create_contact now performs
+    mock_user_result = MagicMock()
+    mock_user_result.scalar_one_or_none.return_value = None  # external contact
+    mock_db.execute.return_value = mock_user_result
+
     created = MagicMock()
     created.id = uuid.uuid4()
     created.full_name = "Jane Smith"

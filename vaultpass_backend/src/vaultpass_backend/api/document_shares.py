@@ -9,7 +9,9 @@ from vaultpass_backend.schemas.document_share import (
     CreateDocumentShareRequest,
     UpdateDocumentShareRequest,
     DocumentShareResponse,
-    SharedDocumentPublicResponse
+    SharedDocumentPublicResponse,
+    SharedWithMeResponse,
+    SharedWithMeDetailResponse,
 )
 from vaultpass_backend.services.document_share import DocumentShareService
 
@@ -34,6 +36,8 @@ async def create(
     Generate a secure sharing link for a document.
     - User must own the document.
     - User must own the trusted contact.
+    - If the contact is a registered VaultPass user, an internal share is created and the recipient receives an in-app notification.
+    - Otherwise, an external share link is created.
     """
     share = await DocumentShareService.create_share(
         db=db,
@@ -59,6 +63,53 @@ async def list_shares(
     shares = await DocumentShareService.get_my_shares(db=db, user_id=current_user.id)
     return [DocumentShareResponse.model_validate(s) for s in shares]
 
+# NOTE: /shared-with-me routes MUST be registered before /{share_id} to avoid
+# FastAPI matching the literal "shared-with-me" as a UUID path parameter.
+
+@router.get(
+    "/shared-with-me",
+    response_model=List[SharedWithMeResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List documents shared with me",
+    response_description="Documents shared with the authenticated user by other VaultPass users"
+)
+async def list_shared_with_me(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieve all documents that other VaultPass users have shared with the authenticated user.
+    Only returns internal shares where this user is the designated recipient.
+    """
+    return await DocumentShareService.get_shared_with_me(
+        db=db,
+        recipient_user_id=current_user.id
+    )
+
+@router.get(
+    "/shared-with-me/{share_id}",
+    response_model=SharedWithMeDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get shared document detail",
+    response_description="Details of a single document shared with the authenticated user"
+)
+async def get_shared_with_me_detail(
+    share_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieve full details of a single document shared with the authenticated user.
+    Returns 404 if the share does not exist or the current user is not the recipient.
+    """
+    return await DocumentShareService.get_shared_with_me_detail(
+        db=db,
+        share_id=share_id,
+        recipient_user_id=current_user.id
+    )
+
+
+
 @router.get(
     "/{share_id}",
     response_model=DocumentShareResponse,
@@ -80,6 +131,7 @@ async def get_details(
         user_id=current_user.id
     )
     return DocumentShareResponse.model_validate(share)
+
 
 @router.put(
     "/{share_id}",

@@ -9,6 +9,8 @@ import { UploadDocumentModal } from '../components/documents/UploadDocumentModal
 import { DocumentDetailsModal } from '../components/documents/DocumentDetailsModal';
 import { EditDocumentModal } from '../components/documents/EditDocumentModal';
 import { ShareDocumentModal } from '../components/documents/ShareDocumentModal';
+import { AppSidebar } from '../components/ui/AppSidebar';
+import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './DocumentsPage.css';
 
 export function DocumentsPage() {
@@ -178,51 +180,16 @@ export function DocumentsPage() {
   const activeCount = visibleDocuments.length;
   const showEmptyState = !loading && activeCount === 0;
 
+  const uploadCta = (
+    <button type="button" className="button button-primary" onClick={handleOpenFilePicker}>
+      <span className="material-symbols-outlined">upload_file</span>
+      Upload Document
+    </button>
+  );
+
   return (
     <div className="documents-page">
-      <nav className="documents-sidebar">
-        <div className="documents-logo">
-          <span>VaultPass</span>
-          <span>Secure Document Vault</span>
-        </div>
-
-        <div className="documents-sidebar-cta">
-          <button type="button" className="button button-primary" onClick={handleOpenFilePicker}>
-            <span className="material-symbols-outlined">upload_file</span>
-            Upload Document
-          </button>
-        </div>
-
-        <div className="documents-sidebar-links">
-          <Link to="/" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/documents" className="documents-sidebar-link documents-sidebar-link--active">
-            <span className="material-symbols-outlined">description</span>
-            <span>Documents</span>
-          </Link>
-          <Link to="/trusted-contacts" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">group</span>
-            <span>Trusted Contacts</span>
-          </Link>
-          <Link to="/shared-access" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">share</span>
-            <span>Shared Access</span>
-          </Link>
-        </div>
-
-        <div className="documents-sidebar-footer">
-          <Link to="/notifications" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">notifications</span>
-            <span>Notifications</span>
-          </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
-            <span className="material-symbols-outlined">settings</span>
-            <span>Settings</span>
-          </button>
-        </div>
-      </nav>
+      <AppSidebar cta={uploadCta} />
 
       <div className="documents-main">
         <header className="documents-topbar">
@@ -240,12 +207,7 @@ export function DocumentsPage() {
             <button type="button" className="icon-button" aria-label="Help">
               <span className="material-symbols-outlined">help_outline</span>
             </button>
-            <div className="documents-profile">
-              <img
-                src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=256&q=80"
-                alt="User profile"
-              />
-            </div>
+            <UserProfileMenu variant="topbar" />
           </div>
         </header>
 

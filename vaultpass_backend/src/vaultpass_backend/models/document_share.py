@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import String, DateTime, ForeignKey, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from vaultpass_backend.database.connection import Base
@@ -65,9 +65,15 @@ class DocumentShare(Base):
         onupdate=func.now(),
         nullable=True
     )
+    recipient_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
 
     # Relationships
-    owner: Mapped["User"] = relationship("User", back_populates="shares")
+    owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id], back_populates="shares")
+    recipient_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[recipient_user_id], back_populates="received_shares")
     document: Mapped["Document"] = relationship("Document", back_populates="shares")
     contact: Mapped["TrustedContact"] = relationship("TrustedContact", back_populates="shares")
 

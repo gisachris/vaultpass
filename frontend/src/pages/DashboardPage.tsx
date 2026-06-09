@@ -1,22 +1,20 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { useDashboard } from '../hooks/useDashboard';
+import { AppSidebar } from '../components/ui/AppSidebar';
+import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './DashboardPage.css';
 
 function formatStorageSize(mb: number): string {
-  if (mb < 1024) {
-    return `${mb.toFixed(1)} MB`;
-  }
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
   return `${(mb / 1024).toFixed(1)} GB`;
 }
 
 function formatDate(isoString: string): string {
   try {
     return new Date(isoString).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+      month: 'short', day: 'numeric', year: 'numeric',
     });
   } catch {
     return 'Unknown date';
@@ -48,12 +46,11 @@ function getActivityIcon(action: string): string {
 }
 
 export function DashboardPage() {
-  const location = useLocation();
   const { data, loading, error, refresh } = useDashboard();
 
   const storagePercentage = useMemo(() => {
     if (!data?.account_overview.storage_used_mb) return 0;
-    const totalStorage = 10 * 1024; // 10 GB
+    const totalStorage = 10 * 1024;
     return Math.min((data.account_overview.storage_used_mb / totalStorage) * 100, 100);
   }, [data?.account_overview.storage_used_mb]);
 
@@ -65,13 +62,21 @@ export function DashboardPage() {
   if (error) {
     return (
       <div className="dashboard-page">
-        <div className="dashboard-error-state">
-          <span className="material-symbols-outlined">error_outline</span>
-          <h2>Unable to load dashboard</h2>
-          <p>{error}</p>
-          <button type="button" className="button button-primary" onClick={refresh}>
-            Try again
-          </button>
+        <AppSidebar cta={
+          <Link to="/documents" className="button button-primary">
+            <span className="material-symbols-outlined">upload_file</span>
+            Upload Document
+          </Link>
+        } />
+        <div className="documents-main">
+          <div className="dashboard-error-state">
+            <span className="material-symbols-outlined">error_outline</span>
+            <h2>Unable to load dashboard</h2>
+            <p>{error}</p>
+            <button type="button" className="button button-primary" onClick={refresh}>
+              Try again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -80,9 +85,17 @@ export function DashboardPage() {
   if (loading || !data) {
     return (
       <div className="dashboard-page">
-        <div className="dashboard-loading-state">
-          <div className="spinner" />
-          <p>Loading your dashboard…</p>
+        <AppSidebar cta={
+          <Link to="/documents" className="button button-primary">
+            <span className="material-symbols-outlined">upload_file</span>
+            Upload Document
+          </Link>
+        } />
+        <div className="documents-main">
+          <div className="dashboard-loading-state">
+            <div className="spinner" />
+            <p>Loading your dashboard…</p>
+          </div>
         </div>
       </div>
     );
@@ -90,57 +103,12 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      <nav className="documents-sidebar">
-        <div className="documents-logo">
-          <span>VaultPass</span>
-          <span>Secure Document Vault</span>
-        </div>
-
-        <div className="documents-sidebar-cta">
-          <Link to="/documents" className="button button-primary">
-            <span className="material-symbols-outlined">upload_file</span>
-            Upload Document
-          </Link>
-        </div>
-
-        <div className="documents-sidebar-links">
-          <Link to="/" className={`documents-sidebar-link ${location.pathname === '/' || location.pathname === '/dashboard' ? 'documents-sidebar-link--active' : ''}`}>
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/documents" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">description</span>
-            <span>Documents</span>
-          </Link>
-          <Link to="/trusted-contacts" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">group</span>
-            <span>Trusted Contacts</span>
-          </Link>
-          <Link to="/notifications" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">notifications</span>
-            <span>Notifications</span>
-          </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
-            <span className="material-symbols-outlined">settings</span>
-            <span>Settings</span>
-          </button>
-        </div>
-
-        <div className="documents-sidebar-footer">
-          <div className="sidebar-account-preview">
-            <div className="sidebar-avatar">
-              <img
-                src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=64&q=80"
-                alt="Account"
-              />
-            </div>
-            <div>
-              <p className="sidebar-account-label">Account</p>
-              <p className="sidebar-account-date">Created {formatDate(data.account_overview.account_created)}</p>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppSidebar cta={
+        <Link to="/documents" className="button button-primary">
+          <span className="material-symbols-outlined">upload_file</span>
+          Upload Document
+        </Link>
+      } />
 
       <div className="documents-main">
         <header className="documents-topbar">
@@ -155,12 +123,7 @@ export function DashboardPage() {
             <button type="button" className="icon-button" aria-label="Help">
               <span className="material-symbols-outlined">help_outline</span>
             </button>
-            <div className="documents-profile">
-              <img
-                src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=256&q=80"
-                alt="User profile"
-              />
-            </div>
+            <UserProfileMenu variant="topbar" />
           </div>
         </header>
 
@@ -175,7 +138,7 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {/* Overview Cards */}
+          {/* ── Overview Cards ─────────────────────────────────────────── */}
           <section className="dashboard-overview-cards">
             <div className="metric-card">
               <div className="metric-icon">
@@ -203,6 +166,19 @@ export function DashboardPage() {
 
             <div className="metric-card">
               <div className="metric-icon">
+                <span className="material-symbols-outlined">inbox</span>
+              </div>
+              <div className="metric-content">
+                <p className="metric-label">Shared With Me</p>
+                <h3 className="metric-value">{data.summary.shared_with_me_count}</h3>
+                <p className="metric-sublabel">
+                  <Link to="/received-documents" className="metric-link">View received</Link>
+                </p>
+              </div>
+            </div>
+
+            <div className="metric-card">
+              <div className="metric-icon">
                 <span className="material-symbols-outlined">group</span>
               </div>
               <div className="metric-content">
@@ -224,7 +200,7 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {/* Main Grid */}
+          {/* ── Main Grid ──────────────────────────────────────────────── */}
           <div className="dashboard-grid">
             {/* Left Column */}
             <div className="dashboard-left-column">
@@ -232,9 +208,7 @@ export function DashboardPage() {
               <section className="dashboard-card">
                 <div className="card-header">
                   <h2>Expiring Documents</h2>
-                  <Link to="/documents" className="card-action-link">
-                    View All
-                  </Link>
+                  <Link to="/documents" className="card-action-link">View All</Link>
                 </div>
                 {data.expiring_documents.length === 0 ? (
                   <div className="empty-state">
@@ -286,6 +260,32 @@ export function DashboardPage() {
                   </div>
                 )}
               </section>
+
+              {/* Documents Shared With Me */}
+              {data.recent_shared_documents.length > 0 && (
+                <section className="dashboard-card">
+                  <div className="card-header">
+                    <h2>Documents Shared With Me</h2>
+                    <Link to="/received-documents" className="card-action-link">View All</Link>
+                  </div>
+                  <div className="shared-with-me-list">
+                    {data.recent_shared_documents.map((doc) => (
+                      <div key={doc.share_id} className="shared-with-me-item">
+                        <div className="shared-with-me-icon">
+                          <span className="material-symbols-outlined">inbox</span>
+                        </div>
+                        <div className="shared-with-me-info">
+                          <h4>{doc.document_title}</h4>
+                          <p>Shared by {doc.owner_name}</p>
+                        </div>
+                        <span className="shared-with-me-time">
+                          {formatDistanceToNow(parseISO(doc.shared_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* Right Column */}
@@ -301,13 +301,9 @@ export function DashboardPage() {
                       <svg viewBox="0 0 100 100" className="storage-arc">
                         <circle cx="50" cy="50" r="45" className="storage-bg" />
                         <circle
-                          cx="50"
-                          cy="50"
-                          r="45"
+                          cx="50" cy="50" r="45"
                           className="storage-fill"
-                          style={{
-                            strokeDasharray: `${(storagePercentage / 100) * 282.7} 282.7`,
-                          }}
+                          style={{ strokeDasharray: `${(storagePercentage / 100) * 282.7} 282.7` }}
                         />
                       </svg>
                       <div className="storage-label">
@@ -316,9 +312,7 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="storage-info">
-                    <p className="storage-used">
-                      {formatStorageSize(data.account_overview.storage_used_mb)} used
-                    </p>
+                    <p className="storage-used">{formatStorageSize(data.account_overview.storage_used_mb)} used</p>
                     <p className="storage-total">of 10 GB</p>
                   </div>
                 </div>
@@ -345,9 +339,7 @@ export function DashboardPage() {
               <section className="dashboard-card">
                 <div className="card-header">
                   <h2>Recent Notifications</h2>
-                  <Link to="/notifications" className="card-action-link">
-                    View All
-                  </Link>
+                  <Link to="/notifications" className="card-action-link">View All</Link>
                 </div>
                 {data.recent_notifications.length === 0 ? (
                   <div className="empty-state">
@@ -367,6 +359,29 @@ export function DashboardPage() {
                     ))}
                   </div>
                 )}
+              </section>
+
+              {/* Account Overview */}
+              <section className="dashboard-card">
+                <div className="card-header">
+                  <h2>Account</h2>
+                </div>
+                <div className="account-overview">
+                  <div className="account-field">
+                    <span className="material-symbols-outlined">calendar_today</span>
+                    <div>
+                      <p className="account-field-label">Member since</p>
+                      <p className="account-field-value">{formatDate(data.account_overview.account_created)}</p>
+                    </div>
+                  </div>
+                  <div className="account-field">
+                    <span className="material-symbols-outlined">login</span>
+                    <div>
+                      <p className="account-field-label">Last login</p>
+                      <p className="account-field-value">{lastLoginDisplay}</p>
+                    </div>
+                  </div>
+                </div>
               </section>
             </div>
           </div>

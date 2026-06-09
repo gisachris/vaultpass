@@ -21,6 +21,7 @@ from vaultpass_backend.schemas.dashboard import (
     ExpiringDocumentResponse,
     RecentActivityResponse,
     RecentNotificationResponse,
+    SharedWithMeDocumentResponse,
     SummaryResponse,
 )
 
@@ -53,11 +54,13 @@ class DashboardService:
             reminder_days,
             recent_activity,
             recent_notifications,
+            recent_shared_documents,
         ) = await asyncio.gather(
             DashboardService._get_summary(db, user.id),
             DashboardService._get_reminder_days(db, user.id),
             DashboardService._get_recent_activity(db, user.id),
             DashboardService._get_recent_notifications(db, user.id),
+            DashboardService._get_recent_shared_with_me(db, user.id),
         )
 
         # ── Phase 2: depend on reminder_days ──────────────────────────── #
@@ -86,6 +89,7 @@ class DashboardService:
             expiring_documents=expiring_documents,
             recent_activity=recent_activity,
             recent_notifications=recent_notifications,
+            recent_shared_documents=recent_shared_documents,
             account_overview=account_overview,
         )
 
@@ -95,7 +99,7 @@ class DashboardService:
 
     @staticmethod
     async def _get_summary(db: AsyncSession, user_id: uuid.UUID) -> SummaryResponse:
-        """Fetch the four summary card counts concurrently."""
+        """Fetch the summary card counts concurrently."""
         from vaultpass_backend.services.notification import NotificationService
 
         (
@@ -103,11 +107,13 @@ class DashboardService:
             trusted_contacts,
             active_shares,
             unread_notifications,
+            shared_with_me_count,
         ) = await asyncio.gather(
             DashboardService._count_documents(db, user_id),
             DashboardService._count_trusted_contacts(db, user_id),
             DashboardService._count_active_shares(db, user_id),
             NotificationService.get_unread_count(db, user_id),
+            DashboardService._count_received_shares(db, user_id),
         )
 
         return SummaryResponse(
@@ -115,6 +121,7 @@ class DashboardService:
             trusted_contacts=trusted_contacts,
             active_shares=active_shares,
             unread_notifications=unread_notifications,
+            shared_with_me_count=shared_with_me_count,
         )
 
     @staticmethod
@@ -318,3 +325,32 @@ class DashboardService:
             )
         )
         return result.scalar() or 0
+
+    @staticmethod
+    async def _count_received_shares(db: AsyncSession, user_id: uuid.UUID) -> int:
+        """Count all document shares received by this user (they are the recipient)."""
+        from vaultpass_backend.repository.document_share import DocumentShareRepository
+        return await DocumentShareRepository.count_received_shares(db, user_id)
+
+    @staticmethod
+    async def _get_recent_shared_with_me(
+        db: AsyncSession, user_id: uuid.UUID
+    ) -> List[SharedWithMeDocumentResponse]:
+        """Return the 5 most recently received shared documents for the dashboard panel."""
+        from vaultpass_backend.repository.document_share import DocumentShareRepository
+        from sqlalchemy.orm import selectinload
+
+        shares = await DocumentShareRepository.get_received_shares(db, user_id)
+        items = []
+        for s in shares[:5]:
+            doc = s.document
+            owner = s.owner
+            items.append(
+                SharedWithMeDocumentResponse(
+                    share_id=s.id,
+                    document_title=doc.title if doc else "Unknown",
+                    owner_name=owner.full_name if owner else "Unknown",
+                    shared_at=s.created_at,
+                )
+            )
+        return items

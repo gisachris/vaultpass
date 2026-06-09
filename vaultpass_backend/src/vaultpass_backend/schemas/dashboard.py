@@ -10,6 +10,7 @@ class SummaryResponse(BaseModel):
     trusted_contacts: int
     active_shares: int
     unread_notifications: int
+    shared_with_me_count: int
 
 
 class DocumentHealthResponse(BaseModel):
@@ -50,6 +51,14 @@ class RecentNotificationResponse(BaseModel):
     created_at: datetime
 
 
+class SharedWithMeDocumentResponse(BaseModel):
+    """A document shared with the user, shown in the dashboard."""
+    share_id: uuid.UUID
+    document_title: str
+    owner_name: str
+    shared_at: datetime
+
+
 class AccountOverviewResponse(BaseModel):
     """Account-level metadata for the overview card."""
     account_created: datetime
@@ -65,4 +74,5 @@ class DashboardResponse(BaseModel):
     expiring_documents: List[ExpiringDocumentResponse]
     recent_activity: List[RecentActivityResponse]
     recent_notifications: List[RecentNotificationResponse]
+    recent_shared_documents: List[SharedWithMeDocumentResponse]
     account_overview: AccountOverviewResponse

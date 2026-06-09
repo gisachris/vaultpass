@@ -30,6 +30,7 @@ class DocumentShareResponse(BaseModel):
     access_token: str
     share_link: str
     is_active: bool
+    recipient_user_id: Optional[UUID] = None
     expires_at: Optional[datetime] = None
     last_accessed_at: Optional[datetime] = None
     created_at: datetime
@@ -49,3 +50,29 @@ class SharedDocumentPublicResponse(BaseModel):
     created_at: datetime
     expiry_date: Optional[datetime] = None
     download_url: str
+
+class SharedWithMeResponse(BaseModel):
+    """
+    Schema for a document shared with the authenticated user (list view).
+    """
+    share_id: UUID
+    document_id: UUID
+    document_title: str
+    document_type: str
+    owner_name: str
+    shared_at: datetime
+    expires_at: Optional[datetime] = None
+    is_active: bool
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class SharedWithMeDetailResponse(SharedWithMeResponse):
+    """
+    Schema for a single received share (detail view).
+    Extends the list view with additional fields.
+    """
+    owner_id: UUID
+    contact_id: UUID
+    last_accessed_at: Optional[datetime] = None

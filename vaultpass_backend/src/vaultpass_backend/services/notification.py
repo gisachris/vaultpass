@@ -359,3 +359,30 @@ class NotificationService:
             message=f"{contact_name} used emergency access to view vault.",
             type=NotificationType.WARNING
         )
+
+    # ---- Internal Sharing Events ----
+
+    @staticmethod
+    async def notify_internal_share_received(
+        db: AsyncSession,
+        recipient_user_id: uuid.UUID,
+        owner_name: str,
+        doc_title: str,
+        share_id: uuid.UUID,
+        doc_id: uuid.UUID,
+        contact_id: uuid.UUID,
+    ) -> Optional[Notification]:
+        """
+        Create an in-app notification for the recipient user when a document
+        is shared with them internally (i.e. they have a VaultPass account).
+        Targets the RECIPIENT, not the owner.
+        """
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=recipient_user_id,
+            title="Document Shared With You",
+            message=f"{owner_name} shared '{doc_title}' with you.",
+            type=NotificationType.INFO,
+            related_document_id=doc_id,
+            related_share_id=share_id,
+        )

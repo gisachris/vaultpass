@@ -71,13 +71,25 @@ class User(Base):
     )
     trusted_contacts: Mapped[List["TrustedContact"]] = relationship(
         "TrustedContact",
+        foreign_keys="TrustedContact.owner_id",
         back_populates="owner",
         cascade="all, delete-orphan"
     )
+    trusted_contact_links: Mapped[List["TrustedContact"]] = relationship(
+        "TrustedContact",
+        foreign_keys="TrustedContact.linked_user_id",
+        back_populates="linked_user",
+    )
     shares: Mapped[List["DocumentShare"]] = relationship(
         "DocumentShare",
+        foreign_keys="DocumentShare.owner_id",
         back_populates="owner",
         cascade="all, delete-orphan"
+    )
+    received_shares: Mapped[List["DocumentShare"]] = relationship(
+        "DocumentShare",
+        foreign_keys="DocumentShare.recipient_user_id",
+        back_populates="recipient_user",
     )
     notifications: Mapped[List["Notification"]] = relationship(
         "Notification",

@@ -10,7 +10,12 @@ from vaultpass_backend.models.document_share import DocumentShare
 from vaultpass_backend.models.document import Document
 from vaultpass_backend.models.trusted_contact import TrustedContact
 from vaultpass_backend.repository.document_share import DocumentShareRepository
-from vaultpass_backend.schemas.document_share import CreateDocumentShareRequest, UpdateDocumentShareRequest
+from vaultpass_backend.schemas.document_share import (
+    CreateDocumentShareRequest,
+    UpdateDocumentShareRequest,
+    SharedWithMeResponse,
+    SharedWithMeDetailResponse,
+)
 from vaultpass_backend.services.supabase_storage import storage_service
 
 class DocumentShareService:
@@ -60,7 +65,7 @@ class DocumentShareService:
                 detail="Not authorized to access this trusted contact"
             )
 
-        # Generate a secure access token
+        # Generate a secure access token (used for external shares; stored for all)
         access_token = secrets.token_urlsafe(48)
 
         new_share = DocumentShare(
@@ -69,34 +74,60 @@ class DocumentShareService:
             owner_id=owner_id,
             access_token=access_token,
             expires_at=share_data.expires_at,
-            is_active=True
+            is_active=True,
+            recipient_user_id=contact.linked_user_id,  # None for external shares
         )
 
         saved_share = await DocumentShareRepository.create_share(db, new_share)
 
-        # Trigger notification event
         from vaultpass_backend.services.notification import NotificationService
-        await NotificationService.notify_document_shared(
-            db=db,
-            owner_id=owner_id,
-            share_id=saved_share.id,
-            doc_title=doc.title,
-            contact_name=contact.full_name,
-            doc_id=doc.id,
-            contact_id=contact.id
-        )
-
-        # Audit log
         from vaultpass_backend.services.audit_service import AuditService
         from vaultpass_backend.core import constants
-        await AuditService.log_action(
-            db=db,
-            user_id=owner_id,
-            action=constants.DOCUMENT_SHARED,
-            entity_type="DOCUMENT_SHARE",
-            entity_id=saved_share.id,
-            description=f"Document '{doc.title}' shared with '{contact.full_name}'.",
-        )
+
+        if contact.linked_user_id:
+            # ── INTERNAL SHARE: recipient is a registered VaultPass user ──────
+            # Fetch owner's name for the notification message
+            from vaultpass_backend.models.user import User
+            owner_result = await db.execute(select(User).where(User.id == owner_id))
+            owner = owner_result.scalar_one_or_none()
+            owner_name = owner.full_name if owner else "Someone"
+
+            await NotificationService.notify_internal_share_received(
+                db=db,
+                recipient_user_id=contact.linked_user_id,
+                owner_name=owner_name,
+                doc_title=doc.title,
+                share_id=saved_share.id,
+                doc_id=doc.id,
+                contact_id=contact.id,
+            )
+            await AuditService.log_action(
+                db=db,
+                user_id=owner_id,
+                action=constants.DOCUMENT_SHARED_INTERNAL,
+                entity_type="DOCUMENT_SHARE",
+                entity_id=saved_share.id,
+                description=f"Document '{doc.title}' shared internally with '{contact.full_name}' (VaultPass user).",
+            )
+        else:
+            # ── EXTERNAL SHARE: recipient is not a VaultPass user ─────────────
+            await NotificationService.notify_document_shared(
+                db=db,
+                owner_id=owner_id,
+                share_id=saved_share.id,
+                doc_title=doc.title,
+                contact_name=contact.full_name,
+                doc_id=doc.id,
+                contact_id=contact.id,
+            )
+            await AuditService.log_action(
+                db=db,
+                user_id=owner_id,
+                action=constants.DOCUMENT_SHARED_EXTERNAL,
+                entity_type="DOCUMENT_SHARE",
+                entity_id=saved_share.id,
+                description=f"Document '{doc.title}' shared externally with '{contact.full_name}'.",
+            )
 
         return saved_share
 
@@ -302,3 +333,73 @@ class DocumentShareService:
             "expiry_date": share.document.expiry_date,
             "download_url": download_url
         }
+
+    @staticmethod
+    async def get_shared_with_me(
+        db: AsyncSession,
+        recipient_user_id: uuid.UUID,
+    ) -> List[SharedWithMeResponse]:
+        """
+        Return all document shares where the current user is the recipient.
+        """
+        shares = await DocumentShareRepository.get_received_shares(db, recipient_user_id)
+        result = []
+        for s in shares:
+            doc = s.document
+            owner = s.owner
+            result.append(
+                SharedWithMeResponse(
+                    share_id=s.id,
+                    document_id=s.document_id,
+                    document_title=doc.title if doc else "Unknown",
+                    document_type=(
+                        doc.document_type.value
+                        if doc and hasattr(doc.document_type, "value")
+                        else str(doc.document_type) if doc else "UNKNOWN"
+                    ),
+                    owner_name=owner.full_name if owner else "Unknown",
+                    shared_at=s.created_at,
+                    expires_at=s.expires_at,
+                    is_active=s.is_active,
+                )
+            )
+        return result
+
+    @staticmethod
+    async def get_shared_with_me_detail(
+        db: AsyncSession,
+        share_id: uuid.UUID,
+        recipient_user_id: uuid.UUID,
+    ) -> SharedWithMeDetailResponse:
+        """
+        Return a single received share detail.
+        Verifies that the current user is the designated recipient.
+        """
+        share = await DocumentShareRepository.get_received_share_by_id(
+            db, share_id, recipient_user_id
+        )
+        if not share:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Shared document not found or you are not the recipient",
+            )
+
+        doc = share.document
+        owner = share.owner
+        return SharedWithMeDetailResponse(
+            share_id=share.id,
+            document_id=share.document_id,
+            document_title=doc.title if doc else "Unknown",
+            document_type=(
+                doc.document_type.value
+                if doc and hasattr(doc.document_type, "value")
+                else str(doc.document_type) if doc else "UNKNOWN"
+            ),
+            owner_name=owner.full_name if owner else "Unknown",
+            owner_id=share.owner_id,
+            contact_id=share.contact_id,
+            shared_at=share.created_at,
+            expires_at=share.expires_at,
+            is_active=share.is_active,
+            last_accessed_at=share.last_accessed_at,
+        )
