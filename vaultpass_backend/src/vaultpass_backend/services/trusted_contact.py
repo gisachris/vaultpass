@@ -48,11 +48,23 @@ class TrustedContactService:
 
         created_contact = await TrustedContactRepository.create_contact(db, contact)
         logger.info(f"User {owner_id} created trusted contact {created_contact.id}")
-        
+
         # Trigger notification event
         from vaultpass_backend.services.notification import NotificationService
         await NotificationService.notify_contact_added(db, owner_id, created_contact.id, created_contact.full_name)
-        
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=owner_id,
+            action=constants.CONTACT_CREATED,
+            entity_type="TRUSTED_CONTACT",
+            entity_id=created_contact.id,
+            description=f"Trusted contact '{created_contact.full_name}' created.",
+        )
+
         return created_contact
 
     @staticmethod
@@ -114,11 +126,23 @@ class TrustedContactService:
 
         updated_contact = await TrustedContactRepository.update_contact(db, contact, update_dict)
         logger.info(f"User {user_id} updated trusted contact {contact_id}")
-        
+
         # Trigger notification event
         from vaultpass_backend.services.notification import NotificationService
         await NotificationService.notify_contact_updated(db, user_id, updated_contact.id, updated_contact.full_name)
-        
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=user_id,
+            action=constants.CONTACT_UPDATED,
+            entity_type="TRUSTED_CONTACT",
+            entity_id=updated_contact.id,
+            description=f"Trusted contact '{updated_contact.full_name}' updated.",
+        )
+
         return updated_contact
 
     @staticmethod
@@ -135,10 +159,22 @@ class TrustedContactService:
         contact_name = contact.full_name
         await TrustedContactRepository.delete_contact(db, contact)
         logger.info(f"User {user_id} deleted trusted contact {contact_id}")
-        
+
         # Trigger notification event
         from vaultpass_backend.services.notification import NotificationService
         await NotificationService.notify_contact_deleted(db, user_id, contact_name)
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=user_id,
+            action=constants.CONTACT_DELETED,
+            entity_type="TRUSTED_CONTACT",
+            entity_id=contact_id,
+            description=f"Trusted contact '{contact_name}' deleted.",
+        )
 
     @staticmethod
     async def list_contacts(

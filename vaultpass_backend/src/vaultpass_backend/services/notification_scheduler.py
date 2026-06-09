@@ -44,6 +44,14 @@ class NotificationScheduler:
             if expiry_date.tzinfo is None:
                 expiry_date = expiry_date.replace(tzinfo=timezone.utc)
 
+            # Retrieve user settings
+            from vaultpass_backend.repository.settings_repository import SettingsRepository
+            settings = await SettingsRepository.get_by_user_id(db, doc.owner_id)
+            if settings and not settings.document_expiry_notifications:
+                continue
+
+            reminder_days = settings.document_reminder_days if settings else 30
+
             if expiry_date <= now:
                 # Document has expired. Check if we already sent an expiration error notification.
                 existing_query = select(Notification).where(
@@ -62,7 +70,7 @@ class NotificationScheduler:
                 # Document is expiring. Calculate days remaining.
                 # Use date comparison for clean day difference
                 days_remaining = (expiry_date.date() - now.date()).days
-                milestones = [30, 14, 7, 1]
+                milestones = [reminder_days, 14, 7, 1]
                 
                 if days_remaining in milestones:
                     # Check if reminder already sent for this milestone

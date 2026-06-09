@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, List
-from sqlalchemy import String, Text, DateTime, func
+from sqlalchemy import String, Text, DateTime, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from vaultpass_backend.database.connection import Base
 
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from vaultpass_backend.models.trusted_contact import TrustedContact
     from vaultpass_backend.models.document_share import DocumentShare
     from vaultpass_backend.models.notification import Notification
+    from vaultpass_backend.models.settings import UserSettings
 
 class User(Base):
     """
@@ -36,6 +37,15 @@ class User(Base):
         Text,
         nullable=False
     )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False
+    )
+    last_login: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -48,6 +58,12 @@ class User(Base):
     )
 
     # Relationships
+    settings: Mapped["UserSettings"] = relationship(
+        "UserSettings",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
     documents: Mapped[List["Document"]] = relationship(
         "Document",
         back_populates="owner",

@@ -5,6 +5,23 @@ from vaultpass_backend.schemas.document import (
     DocumentDetailResponse,
     DocumentListResponse,
 )
+from vaultpass_backend.schemas.audit_log import AuditLogResponse, AuditLogListResponse
+from vaultpass_backend.schemas.settings import (
+    ProfileSettingsResponse,
+    ProfileSettingsUpdate,
+    SecuritySettingsResponse,
+    SecuritySettingsUpdate,
+    NotificationSettingsResponse,
+    NotificationSettingsUpdate,
+    PrivacySettingsResponse,
+    PrivacySettingsUpdate,
+    ReminderSettingsResponse,
+    ReminderSettingsUpdate,
+    ChangePasswordRequest,
+    DeactivateRequest,
+    AccountInfoResponse,
+    AccountSettingsExportResponse,
+)
 
 __all__ = [
     "RegisterRequest",
@@ -15,4 +32,20 @@ __all__ = [
     "DocumentCreateResponse",
     "DocumentDetailResponse",
     "DocumentListResponse",
+    "AuditLogResponse",
+    "AuditLogListResponse",
+    "ProfileSettingsResponse",
+    "ProfileSettingsUpdate",
+    "SecuritySettingsResponse",
+    "SecuritySettingsUpdate",
+    "NotificationSettingsResponse",
+    "NotificationSettingsUpdate",
+    "PrivacySettingsResponse",
+    "PrivacySettingsUpdate",
+    "ReminderSettingsResponse",
+    "ReminderSettingsUpdate",
+    "ChangePasswordRequest",
+    "DeactivateRequest",
+    "AccountInfoResponse",
+    "AccountSettingsExportResponse",
 ]

@@ -86,6 +86,18 @@ class DocumentShareService:
             contact_id=contact.id
         )
 
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=owner_id,
+            action=constants.DOCUMENT_SHARED,
+            entity_type="DOCUMENT_SHARE",
+            entity_id=saved_share.id,
+            description=f"Document '{doc.title}' shared with '{contact.full_name}'.",
+        )
+
         return saved_share
 
     @staticmethod
@@ -187,6 +199,18 @@ class DocumentShareService:
             doc_title=doc_title,
             doc_id=share.document_id,
             contact_id=share.contact_id
+        )
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=user_id,
+            action=constants.SHARE_REVOKED,
+            entity_type="DOCUMENT_SHARE",
+            entity_id=share_id,
+            description=f"Share access revoked for document '{doc_title}'.",
         )
 
         return revoked_share

@@ -12,6 +12,8 @@ from vaultpass_backend.api.documents import router as documents_router
 from vaultpass_backend.api.trusted_contacts import router as trusted_contacts_router
 from vaultpass_backend.api.document_shares import router as shares_router, public_router as public_shares_router
 from vaultpass_backend.api.notifications import router as notifications_router
+from vaultpass_backend.api.audit_logs import router as audit_logs_router
+from vaultpass_backend.api.settings_router import router as settings_router
 from vaultpass_backend.services.notification_scheduler import NotificationScheduler
 
 logger = logging.getLogger("vaultpass")
@@ -81,6 +83,8 @@ app.include_router(documents_router, prefix="/api")
 app.include_router(trusted_contacts_router, prefix="/api")
 app.include_router(shares_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
+app.include_router(audit_logs_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")
 app.include_router(public_shares_router)
 
 

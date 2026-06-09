@@ -22,10 +22,29 @@ class NotificationService:
         related_document_id: Optional[uuid.UUID] = None,
         related_contact_id: Optional[uuid.UUID] = None,
         related_share_id: Optional[uuid.UUID] = None
-    ) -> Notification:
+    ) -> Optional[Notification]:
         """
         Internal helper to construct and save a notification.
+        Filters notification creation based on user preference settings.
         """
+        # Check settings
+        from vaultpass_backend.repository.settings_repository import SettingsRepository
+        settings = await SettingsRepository.get_by_user_id(db, user_id)
+        if settings:
+            title_lower = title.lower()
+            if "expiry" in title_lower or "expired" in title_lower:
+                if not settings.document_expiry_notifications:
+                    return None
+            elif "shared" in title_lower or "share" in title_lower or "accessed" in title_lower:
+                if not settings.shared_access_notifications:
+                    return None
+            elif "contact" in title_lower:
+                if not settings.trusted_contact_notifications:
+                    return None
+            elif any(k in title_lower for k in ["security", "password", "profile", "deactivated", "emergency"]):
+                if not settings.security_alert_notifications:
+                    return None
+
         notification = Notification(
             user_id=user_id,
             title=title,

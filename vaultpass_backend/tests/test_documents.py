@@ -85,7 +85,10 @@ def test_service_upload_document_success(mock_upload, mock_notify_uploaded, mock
     assert doc.owner_id == mock_user.id
     assert doc.file_name == "passport.pdf"
     mock_upload.assert_called_once()
-    mock_db.add.assert_called_once()
+    # db.add is now called for both the Document and the AuditLog, so assert
+    # that a Document instance was among the added objects.
+    added_types = [type(call.args[0]).__name__ for call in mock_db.add.call_args_list]
+    assert "Document" in added_types
     mock_db.commit.assert_called_once()
 
 @patch("vaultpass_backend.api.documents.upload_document", new_callable=AsyncMock)

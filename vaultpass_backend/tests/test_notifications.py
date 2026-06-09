@@ -234,10 +234,17 @@ def test_service_get_notification_forbidden(mock_repo_get, mock_user):
 
 # ================= SCHEDULER & EVENT HOOK TESTS =================
 
+@patch("vaultpass_backend.repository.settings_repository.SettingsRepository.get_by_user_id", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.notification.NotificationService.create_notification", new_callable=AsyncMock)
-def test_scheduler_checks_expiring_resources(mock_create_notif):
+def test_scheduler_checks_expiring_resources(mock_create_notif, mock_get_settings):
     from vaultpass_backend.services.notification_scheduler import NotificationScheduler
     import asyncio
+
+    # Return a mock settings object with notifications enabled and default 30-day reminder
+    mock_settings = MagicMock()
+    mock_settings.document_expiry_notifications = True
+    mock_settings.document_reminder_days = 30
+    mock_get_settings.return_value = mock_settings
 
     mock_db = AsyncMock()
     

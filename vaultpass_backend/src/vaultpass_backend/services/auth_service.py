@@ -43,6 +43,13 @@ async def register_user(db: AsyncSession, register_data: RegisterRequest) -> Use
     )
     
     db.add(new_user)
+    await db.flush()
+
+    # Automatically create default settings row
+    from vaultpass_backend.models.settings import UserSettings
+    default_settings = UserSettings(user_id=new_user.id)
+    db.add(default_settings)
+    
     await db.commit()
     await db.refresh(new_user)
     return new_user
@@ -58,10 +65,23 @@ async def authenticate_user(db: AsyncSession, login_data: LoginRequest) -> User:
             detail="Invalid credentials"
         )
     
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is deactivated"
+        )
+    
     if not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
+    
+    # Update last login timestamp
+    from sqlalchemy import func
+    user.last_login = func.now()
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
     
     return user

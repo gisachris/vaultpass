@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.core.dependencies import get_db, get_current_user
 from vaultpass_backend.schemas.auth import RegisterRequest, LoginRequest, UserResponse, TokenResponse
 from vaultpass_backend.services import auth_service
+from vaultpass_backend.services.audit_service import AuditService
 from vaultpass_backend.core.security import create_access_token
 from vaultpass_backend.models.user import User
+from vaultpass_backend.core import constants
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -16,6 +18,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
     response_description="Success confirmation message"
 )
 async def register(
+    request: Request,
     register_data: RegisterRequest,
     db: AsyncSession = Depends(get_db)
 ):
@@ -26,7 +29,17 @@ async def register(
     - Hashes password using Bcrypt
     - Saves user to PostgreSQL database
     """
-    await auth_service.register_user(db, register_data)
+    user = await auth_service.register_user(db, register_data)
+    await AuditService.log_action(
+        db=db,
+        user_id=user.id,
+        action=constants.REGISTER,
+        entity_type="USER",
+        entity_id=user.id,
+        description="New user account registered.",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return {"message": "Account created successfully"}
 
 @router.post(
@@ -37,6 +50,7 @@ async def register(
     response_description="Access token and authenticated user profile"
 )
 async def login(
+    request: Request,
     login_data: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
@@ -47,10 +61,21 @@ async def login(
     - Returns token payload along with base user credentials
     """
     user = await auth_service.authenticate_user(db, login_data)
-    
+
     # Encode user ID as the subject
     access_token = create_access_token(data={"sub": str(user.id)})
-    
+
+    await AuditService.log_action(
+        db=db,
+        user_id=user.id,
+        action=constants.LOGIN,
+        entity_type="USER",
+        entity_id=user.id,
+        description="User logged in.",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
