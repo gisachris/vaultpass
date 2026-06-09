@@ -118,7 +118,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={
           <ProtectedRoute>
-            <DocumentsPage />
+            <Home />
           </ProtectedRoute>
         } />
       <Route path="/signup" element={
@@ -130,7 +130,7 @@ export function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DocumentsPage />
+            <Home />
           </ProtectedRoute>
         }
       />

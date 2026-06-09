@@ -1,5 +1,5 @@
-import { LandingPage } from './LandingPage';
+import { DashboardPage } from './DashboardPage';
 
 export function Home() {
-  return <LandingPage />;
+  return <DashboardPage />;
 }
