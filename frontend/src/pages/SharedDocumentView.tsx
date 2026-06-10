@@ -9,6 +9,8 @@ export function SharedDocumentView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [doc, setDoc] = useState<PublicSharedDocument | null>(null);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [submittingPassword, setSubmittingPassword] = useState(false);
 
   useEffect(() => {
     async function loadSharedDoc() {
@@ -21,7 +23,12 @@ export function SharedDocumentView() {
         const data = await fetchPublicSharedDocument(token);
         setDoc(data);
       } catch (err: any) {
-        setError(err.response?.data?.detail || 'This shared link is inactive, expired, or invalid.');
+        const errMsg = err.response?.data?.detail;
+        if (errMsg === 'password_required' || errMsg === 'incorrect_password') {
+          setError(errMsg);
+        } else {
+          setError(errMsg || 'This shared link is inactive, expired, or invalid.');
+        }
       } finally {
         setLoading(false);
       }
@@ -34,6 +41,28 @@ export function SharedDocumentView() {
       window.open(doc.download_url, '_blank');
     }
   };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSubmittingPassword(true);
+    try {
+      const data = await fetchPublicSharedDocument(token, passwordInput);
+      setDoc(data);
+      setError('');
+    } catch (err: any) {
+      const errMsg = err.response?.data?.detail;
+      if (errMsg === 'incorrect_password' || errMsg === 'password_required') {
+        setError(errMsg);
+      } else {
+        setError(errMsg || 'This shared link is inactive, expired, or invalid.');
+      }
+    } finally {
+      setSubmittingPassword(false);
+    }
+  };
+
+  const isPasswordError = error === 'password_required' || error === 'incorrect_password';
 
   return (
     <div className="shared-view-container">
@@ -48,6 +77,29 @@ export function SharedDocumentView() {
           <div className="shared-view-loading">
             <div className="spinner" />
             <p>Retrieving secure shared access...</p>
+          </div>
+        ) : isPasswordError ? (
+          <div className="shared-view-password-prompt">
+            <span className="material-symbols-outlined password-icon">vpn_key</span>
+            <h2>Password Required</h2>
+            <p>This secure link is password protected. Enter the password below to access the document.</p>
+            <form onSubmit={handlePasswordSubmit} className="shared-view-password-form">
+              <input
+                type="password"
+                placeholder="Enter password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="input-field password-input"
+                required
+                autoFocus
+              />
+              {error === 'incorrect_password' && (
+                <p className="password-error-msg">Incorrect password. Please try again.</p>
+              )}
+              <button type="submit" className="button button-primary password-submit-btn" disabled={submittingPassword}>
+                {submittingPassword ? 'Verifying...' : 'Unlock Document'}
+              </button>
+            </form>
           </div>
         ) : error ? (
           <div className="shared-view-error">
@@ -81,10 +133,17 @@ export function SharedDocumentView() {
               </div>
             </div>
 
-            <button type="button" className="button button-primary shared-view-download-btn" onClick={handleDownload}>
-              <span className="material-symbols-outlined">download</span>
-              Download Document
-            </button>
+            {doc.allow_download ? (
+              <button type="button" className="button button-primary shared-view-download-btn" onClick={handleDownload}>
+                <span className="material-symbols-outlined">download</span>
+                Download Document
+              </button>
+            ) : (
+              <div className="shared-view-disabled-download">
+                <span className="material-symbols-outlined">block</span>
+                <p>Downloading is disabled for this secure share.</p>
+              </div>
+            )}
           </div>
         ) : null}
 

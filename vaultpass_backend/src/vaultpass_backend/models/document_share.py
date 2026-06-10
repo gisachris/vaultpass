@@ -70,6 +70,21 @@ class DocumentShare(Base):
         nullable=True,
         index=True
     )
+    access_level: Mapped[str | None] = mapped_column(
+        String(50),
+        default="view",
+        nullable=True
+    )
+    allow_download: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False
+    )
+    password_hash: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
 
     # Relationships
     owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id], back_populates="shares")

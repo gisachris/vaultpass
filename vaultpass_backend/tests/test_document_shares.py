@@ -3,13 +3,23 @@ from datetime import datetime, timezone, timedelta
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch, MagicMock as RealMagicMock
 
-from vaultpass_backend.main import app
 from vaultpass_backend.models.document_share import DocumentShare
 from vaultpass_backend.models.document import Document, DocumentType
 from vaultpass_backend.models.trusted_contact import TrustedContact
 from vaultpass_backend.models.user import User
+
+class MagicMock(RealMagicMock):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if kwargs.get('spec') == DocumentShare:
+            self.access_level = None
+            self.allow_download = True
+            self.password_hash = None
+
+
+from vaultpass_backend.main import app
 
 client = TestClient(app)
 

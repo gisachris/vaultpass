@@ -10,7 +10,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 280px;
+  width: 240px;
   min-height: 100vh;
   padding: 24px 16px;
   background: #fbf9fa;
@@ -77,13 +77,13 @@
 }
 
 .documents-main {
-  margin-left: 280px;
-  width: calc(100% - 280px);
+  margin-left: 50px;
+  width: calc(100% - 50px);
 }
 
 .documents-topbar {
   position: fixed;
-  left: 280px;
+  left: 240px;
   right: 0;
   top: 0;
   height: 64px;
@@ -547,6 +547,50 @@
   background: #f8fafc;
 }
 
+.document-row-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.document-row-menu button .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+
+.document-row-menu-danger {
+  color: #dc2626 !important;
+}
+
+.document-row-menu-danger .material-symbols-outlined {
+  color: #dc2626 !important;
+}
+
+/* ─── Share badges ────────────────────────────────────────────────────────── */
+.doc-share-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.doc-share-badge .material-symbols-outlined {
+  font-size: 0.9rem;
+}
+
+.doc-share-badge--internal {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.doc-share-badge--external {
+  background: #fef3c7;
+  color: #b45309;
+}
+
 .documents-modal-overlay {
   position: fixed;
   inset: 0;
@@ -720,4 +764,184 @@
   .documents-canvas {
     padding: 96px 20px 20px;
   }
+}
+
+/* ─── Document Details Modal — Sharing section ───────────────────────────── */
+.ddm-sharing-section {
+  border-top: 1px solid #e8edf3;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ddm-sharing-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.ddm-sharing-title .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+.ddm-shares-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.ddm-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #2c3e50;
+  border-radius: 50%;
+  animation: ddm-spin 0.7s linear infinite;
+}
+
+@keyframes ddm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ddm-no-shares {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.ddm-share-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ddm-share-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ddm-share-group-label .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.ddm-share-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ddm-share-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.ddm-share-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ddm-share-name {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ddm-share-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ddm-perm-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.ddm-expiry-text {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.ddm-share-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ddm-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ddm-status-badge--active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.ddm-status-badge--revoked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ddm-status-badge--expired {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.ddm-revoke-btn {
+  border: none;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ddm-revoke-btn:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.ddm-revoke-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DocumentModel, DOCUMENT_TYPE_ICONS, DOCUMENT_TYPE_LABELS } from '../../types/document';
+import type { DocumentShareInfo } from '../../services/documentShareService';
 
 interface DocumentRowProps {
   document: DocumentModel;
@@ -8,6 +9,7 @@ interface DocumentRowProps {
   onEdit: (document: DocumentModel) => void;
   onDelete: (document: DocumentModel) => void;
   onShare: (document: DocumentModel) => void;
+  shareInfo?: DocumentShareInfo;
 }
 
 function getExpiryStatus(document: DocumentModel) {
@@ -36,7 +38,45 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDelete, onShare }: DocumentRowProps) {
+function ShareBadges({ info }: { info: DocumentShareInfo }) {
+  const { hasInternal, hasExternal, internalCount, externalCount } = info;
+
+  if (!hasInternal && !hasExternal) return null;
+
+  // Both sharing types
+  if (hasInternal && hasExternal) {
+    return (
+      <>
+        <span className="doc-share-badge doc-share-badge--internal" title={`${internalCount} internal share${internalCount !== 1 ? 's' : ''}`}>
+          <span className="material-symbols-outlined">group</span>
+          {internalCount}
+        </span>
+        <span className="doc-share-badge doc-share-badge--external" title={`${externalCount} external link${externalCount !== 1 ? 's' : ''}`}>
+          <span className="material-symbols-outlined">link</span>
+          Link
+        </span>
+      </>
+    );
+  }
+
+  if (hasInternal) {
+    return (
+      <span className="doc-share-badge doc-share-badge--internal" title={`Shared with ${internalCount} contact${internalCount !== 1 ? 's' : ''}`}>
+        <span className="material-symbols-outlined">group</span>
+        {internalCount > 1 ? `${internalCount} contacts` : 'Internal'}
+      </span>
+    );
+  }
+
+  return (
+    <span className="doc-share-badge doc-share-badge--external" title="External share link active">
+      <span className="material-symbols-outlined">link</span>
+      External
+    </span>
+  );
+}
+
+export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDelete, onShare, shareInfo }: DocumentRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const expiry = useMemo(() => getExpiryStatus(document), [document]);
@@ -55,6 +95,7 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
     window.addEventListener('mousedown', handleClickOutside);
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
+
   const uploadedAt = useMemo(
     () => new Date(document.uploaded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
     [document.uploaded_at],
@@ -82,6 +123,7 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
         <div className="document-row-tags">
           <span className="document-row-type">{DOCUMENT_TYPE_LABELS[document.document_type]}</span>
           <span className={`document-row-expiry document-row-expiry--${expiry.style}`}>{expiry.label}</span>
+          {shareInfo && <ShareBadges info={shareInfo} />}
         </div>
         <div className="document-row-actions" ref={actionsRef}>
           <button
@@ -99,18 +141,23 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
           {menuOpen && (
             <div className="document-row-menu" role="menu">
               <button type="button" onClick={() => { setMenuOpen(false); onViewDetails(document); }}>
+                <span className="material-symbols-outlined">info</span>
                 View details
               </button>
+              <button type="button" onClick={() => { setMenuOpen(false); onShare(document); }}>
+                <span className="material-symbols-outlined">share</span>
+                Share document
+              </button>
               <button type="button" onClick={() => { setMenuOpen(false); onDownload(document); }}>
+                <span className="material-symbols-outlined">download</span>
                 Download
               </button>
               <button type="button" onClick={() => { setMenuOpen(false); onEdit(document); }}>
+                <span className="material-symbols-outlined">edit</span>
                 Edit details
               </button>
-              <button type="button" onClick={() => { setMenuOpen(false); onShare(document); }}>
-                Share document
-              </button>
-              <button type="button" onClick={() => { setMenuOpen(false); onDelete(document); }}>
+              <button type="button" className="document-row-menu-danger" onClick={() => { setMenuOpen(false); onDelete(document); }}>
+                <span className="material-symbols-outlined">delete</span>
                 Delete
               </button>
             </div>

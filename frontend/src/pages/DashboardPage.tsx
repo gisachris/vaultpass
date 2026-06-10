@@ -45,6 +45,19 @@ function getActivityIcon(action: string): string {
   return 'history';
 }
 
+function humanizeActivityDescription(action: string, description: string): string {
+  if (action === 'DOCUMENT_SHARED_INTERNAL') {
+    return 'Shared a document with a trusted contact';
+  }
+  if (action === 'DOCUMENT_SHARED_EXTERNAL') {
+    return 'Generated a secure external share link';
+  }
+  if (action === 'SHARE_REVOKED') {
+    return 'Revoked shared access to a document';
+  }
+  return description;
+}
+
 export function DashboardPage() {
   const { data, loading, error, refresh } = useDashboard();
 
@@ -250,7 +263,9 @@ export function DashboardPage() {
                           <span className="material-symbols-outlined">{getActivityIcon(activity.action)}</span>
                         </div>
                         <div className="activity-content">
-                          <p className="activity-description">{activity.description}</p>
+                          <p className="activity-description">
+                            {humanizeActivityDescription(activity.action, activity.description)}
+                          </p>
                           <p className="activity-time">
                             {formatDistanceToNow(parseISO(activity.created_at), { addSuffix: true })}
                           </p>

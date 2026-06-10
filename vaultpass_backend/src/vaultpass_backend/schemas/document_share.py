@@ -11,6 +11,9 @@ class CreateDocumentShareRequest(BaseModel):
     document_id: UUID = Field(..., description="UUID of the document to share")
     contact_id: UUID = Field(..., description="UUID of the trusted contact to share with")
     expires_at: Optional[datetime] = Field(None, description="Optional expiration date of the share link")
+    access_level: Optional[str] = Field(None, description="Access level for internal shares")
+    allow_download: bool = Field(True, description="Whether downloading is allowed for this share")
+    password: Optional[str] = Field(None, description="Optional password protection for external shares")
 
 class UpdateDocumentShareRequest(BaseModel):
     """
@@ -35,6 +38,8 @@ class DocumentShareResponse(BaseModel):
     last_accessed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    access_level: Optional[str] = None
+    allow_download: bool = True
 
     model_config = {
         "from_attributes": True
@@ -49,7 +54,9 @@ class SharedDocumentPublicResponse(BaseModel):
     document_type: DocumentType
     created_at: datetime
     expiry_date: Optional[datetime] = None
-    download_url: str
+    download_url: Optional[str] = None
+    password_required: bool = False
+    allow_download: bool = True
 
 class SharedWithMeResponse(BaseModel):
     """

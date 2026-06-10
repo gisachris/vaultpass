@@ -1,6 +1,6 @@
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.core.dependencies import get_db, get_current_user
@@ -54,13 +54,22 @@ async def create(
     response_description="List of all document shares created by user"
 )
 async def list_shares(
+    document_id: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Retrieve all document shares created by the authenticated user.
+    Can be filtered by document_id.
     """
-    shares = await DocumentShareService.get_my_shares(db=db, user_id=current_user.id)
+    if document_id:
+        shares = await DocumentShareService.get_shares_for_document(
+            db=db,
+            document_id=document_id,
+            user_id=current_user.id
+        )
+    else:
+        shares = await DocumentShareService.get_my_shares(db=db, user_id=current_user.id)
     return [DocumentShareResponse.model_validate(s) for s in shares]
 
 # NOTE: /shared-with-me routes MUST be registered before /{share_id} to avoid
@@ -256,6 +265,8 @@ async def list_shares_for_document(
 )
 async def get_public_share(
     token: str,
+    password: str | None = None,
+    x_share_password: str | None = Header(None, alias="X-Share-Password"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -265,5 +276,10 @@ async def get_public_share(
     - Returns document metadata along with a secure 1-hour download URL.
     - Updates last accessed time.
     """
-    metadata = await DocumentShareService.get_public_share_by_token(db=db, token=token)
+    effective_password = password or x_share_password
+    metadata = await DocumentShareService.get_public_share_by_token(
+        db=db,
+        token=token,
+        password=effective_password
+    )
     return SharedDocumentPublicResponse.model_validate(metadata)

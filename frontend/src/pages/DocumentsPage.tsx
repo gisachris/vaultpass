@@ -1,14 +1,19 @@
-import { DragEvent, FormEvent, useRef, useState } from 'react';
+import { DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { deleteDocument, downloadDocumentUrl, updateDocument } from '../services/documentService';
+import {
+  fetchDocumentShares,
+  buildShareInfoMap,
+  DocumentShareInfo,
+} from '../services/documentShareService';
 import { useDocuments } from '../hooks/useDocuments';
 import { DocumentModel, DOCUMENT_CATEGORY_BUTTONS } from '../types/document';
 import { DocumentRow } from '../components/documents/DocumentRow';
 import { UploadDocumentModal } from '../components/documents/UploadDocumentModal';
 import { DocumentDetailsModal } from '../components/documents/DocumentDetailsModal';
 import { EditDocumentModal } from '../components/documents/EditDocumentModal';
-import { ShareDocumentModal } from '../components/documents/ShareDocumentModal';
+import { DocumentSharingModal } from '../components/documents/DocumentSharingModal';
 import { AppSidebar } from '../components/ui/AppSidebar';
 import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './DocumentsPage.css';
@@ -27,6 +32,16 @@ export function DocumentsPage() {
   const [deleteError, setDeleteError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<DocumentModel | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [shareMap, setShareMap] = useState<Record<string, DocumentShareInfo>>({});
+
+  const loadShareMap = async () => {
+    try {
+      const shares = await fetchDocumentShares();
+      setShareMap(buildShareInfoMap(shares));
+    } catch {
+      // non-critical — badges just won't show
+    }
+  };
 
   const {
     visibleDocuments,
@@ -177,6 +192,10 @@ export function DocumentsPage() {
     }
   };
 
+  useEffect(() => {
+    loadShareMap();
+  }, [visibleDocuments]);
+
   const activeCount = visibleDocuments.length;
   const showEmptyState = !loading && activeCount === 0;
 
@@ -303,6 +322,7 @@ export function DocumentsPage() {
                 <DocumentRow
                   key={document.id}
                   document={document}
+                  shareInfo={shareMap[document.id]}
                   onViewDetails={handleViewDetails}
                   onDownload={handleDownloadDocument}
                   onEdit={handleEditDocument}
@@ -364,6 +384,7 @@ export function DocumentsPage() {
             requestDeleteDocument(selectedDocument);
           }
         }}
+        onShareRefresh={loadShareMap}
       />
 
       {confirmDeleteOpen && pendingDelete && (
@@ -412,10 +433,13 @@ export function DocumentsPage() {
         }}
       />
 
-      <ShareDocumentModal
+      <DocumentSharingModal
         open={shareOpen}
         document={selectedDocument}
-        onClose={() => setShareOpen(false)}
+        onClose={() => {
+          setShareOpen(false);
+          loadShareMap();
+        }}
       />
     </div>
   );

@@ -1,3 +1,5 @@
+import type { AccessLevel } from '../services/documentShareService';
+
 export interface ReceivedShare {
   share_id: string;
   document_id: string;
@@ -7,6 +9,7 @@ export interface ReceivedShare {
   shared_at: string;
   expires_at: string | null;
   is_active: boolean;
+  access_level?: AccessLevel | null;
 }
 
 export interface ReceivedShareDetail extends ReceivedShare {

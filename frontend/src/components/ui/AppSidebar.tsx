@@ -42,9 +42,6 @@ export function AppSidebar({ cta }: AppSidebarProps) {
           >
             <span className="material-symbols-outlined">{icon}</span>
             <span>{label}</span>
-            {label === 'Received Documents' && (
-              <span className="app-sidebar__badge-new">New</span>
-            )}
           </Link>
         ))}
       </div>

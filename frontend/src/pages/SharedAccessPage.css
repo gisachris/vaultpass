@@ -10,7 +10,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 280px;
+  width: 240px;
   min-height: 100vh;
   padding: 24px 16px;
   background: #fbf9fa;
@@ -72,14 +72,14 @@
   cursor: not-allowed;
 }
 
-.shares-main {
-  margin-left: 280px;
-  width: calc(100% - 280px);
-}
+/* .shares-main {
+  margin-left: 50px;
+  width: calc(100% - 50px);
+} */
 
 .shares-topbar {
   position: fixed;
-  left: 280px;
+  left: 240px;
   right: 0;
   top: 0;
   height: 64px;

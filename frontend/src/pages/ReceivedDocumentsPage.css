@@ -419,3 +419,30 @@
   .modal-grid    { grid-template-columns: 1fr; }
   .modal-sheet   { border-radius: 14px; }
 }
+
+/* ─── Permission Badges ────────────────────────────────────────────────────── */
+.perm-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.perm-badge--view {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.perm-badge--view-download {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+
+.perm-badge--edit-metadata {
+  background: #fff7ed;
+  color: #f97316;
+}
+

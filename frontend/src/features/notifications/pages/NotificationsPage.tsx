@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { AppSidebar } from '../../../components/ui/AppSidebar';
+import { UserProfileMenu } from '../../../components/profile/UserProfileMenu';
 import { NotificationCard } from '../components/NotificationCard';
 import { NotificationEmptyState } from '../components/NotificationEmptyState';
 import { NotificationFilters } from '../components/NotificationFilters';
@@ -103,59 +105,30 @@ export function NotificationsPage() {
   }, [unreadCount]);
 
   return (
-    <div className="notifications-page">
-      <aside className="notifications-sidebar">
-        <div className="notifications-sidebar__brand">
-          <h1>VaultPass</h1>
-          <p>Secure Document Vault</p>
-        </div>
+    <div className="documents-page">
+      <AppSidebar cta={
+        <Link to="/documents" className="button button-primary">
+          <span className="material-symbols-outlined">upload_file</span>
+          Upload Document
+        </Link>
+      } />
 
-        <div className="notifications-sidebar__links">
-          <Link className="notifications-sidebar__link" to="/dashboard">
-            <span className="material-symbols-outlined">dashboard</span>
-            Dashboard
-          </Link>
-          <Link className="notifications-sidebar__link" to="/documents">
-            <span className="material-symbols-outlined">description</span>
-            Documents
-          </Link>
-          <Link className="notifications-sidebar__link" to="/trusted-contacts">
-            <span className="material-symbols-outlined">group</span>
-            Trusted Contacts
-          </Link>
-          <Link to="/notifications" className="notifications-sidebar__link notifications-sidebar__link--active">
-            <span className="material-symbols-outlined">notifications</span>
-            Notifications
-            {headerBadge}
-          </Link>
-          <button type="button" className="notifications-sidebar__link notifications-sidebar__link--disabled">
-            <span className="material-symbols-outlined">settings</span>
-            Settings
-          </button>
-        </div>
-      </aside>
-
-      <div className="notifications-main">
-        <header className="notifications-topbar">
-          <div className="notifications-topbar__search">
+      <div className="documents-main">
+        <header className="documents-topbar">
+          <div className="documents-search">
             <span className="material-symbols-outlined">search</span>
             <input placeholder="Search notifications..." disabled />
           </div>
-          <div className="notifications-topbar__meta">
+          <div className="documents-topbar-actions">
             <button type="button" className="icon-button" disabled>
               <span className="material-symbols-outlined">help_outline</span>
             </button>
-            <div className="notifications-avatar">
-              <img
-                src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=256&q=80"
-                alt="User profile"
-              />
-            </div>
+            <UserProfileMenu variant="topbar" />
           </div>
         </header>
 
-        <main className="notifications-canvas">
-          <section className="notifications-hero">
+        <main className="documents-canvas">
+          <section className="documents-headline">
             <div>
               <h1>Notifications</h1>
               <p>Review recent alerts and account activity.</p>

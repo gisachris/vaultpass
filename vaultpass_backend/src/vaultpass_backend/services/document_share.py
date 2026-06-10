@@ -68,6 +68,9 @@ class DocumentShareService:
         # Generate a secure access token (used for external shares; stored for all)
         access_token = secrets.token_urlsafe(48)
 
+        from vaultpass_backend.core.security import get_password_hash
+        password_hash = get_password_hash(share_data.password) if getattr(share_data, 'password', None) else None
+
         new_share = DocumentShare(
             document_id=share_data.document_id,
             contact_id=share_data.contact_id,
@@ -76,6 +79,9 @@ class DocumentShareService:
             expires_at=share_data.expires_at,
             is_active=True,
             recipient_user_id=contact.linked_user_id,  # None for external shares
+            access_level=getattr(share_data, 'access_level', None),
+            allow_download=getattr(share_data, 'allow_download', True),
+            password_hash=password_hash,
         )
 
         saved_share = await DocumentShareRepository.create_share(db, new_share)
@@ -271,7 +277,7 @@ class DocumentShareService:
         await DocumentShareRepository.delete_share(db, share)
 
     @staticmethod
-    async def get_public_share_by_token(db: AsyncSession, token: str) -> Dict[str, Any]:
+    async def get_public_share_by_token(db: AsyncSession, token: str, password: Optional[str] = None) -> Dict[str, Any]:
         """
         Validate token public link and return document metadata with temporary secure download URL.
         No authentication required.
@@ -295,6 +301,20 @@ class DocumentShareService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="This share link has expired"
             )
+
+        # Check password protection if password_hash exists
+        if share.password_hash:
+            if not password:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="password_required"
+                )
+            from vaultpass_backend.core.security import verify_password
+            if not verify_password(password, share.password_hash):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="incorrect_password"
+                )
 
         # Check if the underlying document still exists in the database
         if not share.document:
@@ -322,8 +342,10 @@ class DocumentShareService:
             doc_id=share.document_id
         )
 
-        # Generate a temporary download link (1 hour) using Supabase Storage
-        download_url = await storage_service.generate_signed_url(share.document.file_path, expires_in_seconds=3600)
+        # Generate a temporary download link (1 hour) using Supabase Storage if allowed
+        download_url = None
+        if share.allow_download:
+            download_url = await storage_service.generate_signed_url(share.document.file_path, expires_in_seconds=3600)
 
         # Return only the allowed non-private document metadata
         return {
@@ -331,7 +353,9 @@ class DocumentShareService:
             "document_type": share.document.document_type,
             "created_at": share.document.created_at,
             "expiry_date": share.document.expiry_date,
-            "download_url": download_url
+            "download_url": download_url,
+            "password_required": False,
+            "allow_download": share.allow_download
         }
 
     @staticmethod

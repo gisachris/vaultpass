@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { AppSidebar } from '../components/ui/AppSidebar';
 import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import { fetchReceivedShares, fetchReceivedShareDetail } from '../services/sharedDocumentsService';
+import { ACCESS_LEVEL_LABELS } from '../services/documentShareService';
 import type { ReceivedShare, ReceivedShareDetail } from '../types/receivedDocuments';
 import './ReceivedDocumentsPage.css';
 
@@ -170,6 +171,9 @@ export function ReceivedDocumentsPage() {
 
                       <div className="received-card__footer">
                         <span className={`received-badge ${statusClass}`}>{statusText}</span>
+                        <span className={`perm-badge perm-badge--${(share.access_level || 'view').replace('_', '-')}`}>
+                          {ACCESS_LEVEL_LABELS[share.access_level || 'view']}
+                        </span>
                         <span className="received-card__type">{share.document_type}</span>
                       </div>
                     </div>
@@ -254,10 +258,18 @@ export function ReceivedDocumentsPage() {
                           : 'Not yet accessed'}
                       </p>
                     </div>
-                    <div className="modal-field">
+                     <div className="modal-field">
                       <label>Status</label>
                       <p className={selectedShare.is_active ? 'text-green' : 'text-red'}>
                         {selectedShare.is_active ? 'Active' : 'Revoked'}
+                      </p>
+                    </div>
+                    <div className="modal-field">
+                      <label>Permission Level</label>
+                      <p>
+                        <span className={`perm-badge perm-badge--${(selectedShare.access_level || 'view').replace('_', '-')}`}>
+                          {ACCESS_LEVEL_LABELS[selectedShare.access_level || 'view']}
+                        </span>
                       </p>
                     </div>
                   </div>
