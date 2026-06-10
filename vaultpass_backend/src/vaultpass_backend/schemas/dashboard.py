@@ -11,6 +11,8 @@ class SummaryResponse(BaseModel):
     active_shares: int
     unread_notifications: int
     shared_with_me_count: int
+    documents_previewed_count: int = 0
+    documents_downloaded_count: int = 0
 
 
 class DocumentHealthResponse(BaseModel):

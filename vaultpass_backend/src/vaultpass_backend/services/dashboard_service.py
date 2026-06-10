@@ -108,12 +108,16 @@ class DashboardService:
             active_shares,
             unread_notifications,
             shared_with_me_count,
+            documents_previewed_count,
+            documents_downloaded_count,
         ) = await asyncio.gather(
             DashboardService._count_documents(db, user_id),
             DashboardService._count_trusted_contacts(db, user_id),
             DashboardService._count_active_shares(db, user_id),
             NotificationService.get_unread_count(db, user_id),
             DashboardService._count_received_shares(db, user_id),
+            DashboardService._count_previews(db, user_id),
+            DashboardService._count_downloads(db, user_id),
         )
 
         return SummaryResponse(
@@ -122,6 +126,8 @@ class DashboardService:
             active_shares=active_shares,
             unread_notifications=unread_notifications,
             shared_with_me_count=shared_with_me_count,
+            documents_previewed_count=documents_previewed_count,
+            documents_downloaded_count=documents_downloaded_count,
         )
 
     @staticmethod
@@ -354,3 +360,23 @@ class DashboardService:
                 )
             )
         return items
+
+    @staticmethod
+    async def _count_previews(db: AsyncSession, user_id: uuid.UUID) -> int:
+        from vaultpass_backend.models.audit_log import AuditLog
+        result = await db.execute(
+            select(func.count()).select_from(AuditLog).where(
+                and_(AuditLog.user_id == user_id, AuditLog.action == "DOCUMENT_PREVIEWED")
+            )
+        )
+        return result.scalar() or 0
+
+    @staticmethod
+    async def _count_downloads(db: AsyncSession, user_id: uuid.UUID) -> int:
+        from vaultpass_backend.models.audit_log import AuditLog
+        result = await db.execute(
+            select(func.count()).select_from(AuditLog).where(
+                and_(AuditLog.user_id == user_id, AuditLog.action == "DOCUMENT_DOWNLOADED")
+            )
+        )
+        return result.scalar() or 0

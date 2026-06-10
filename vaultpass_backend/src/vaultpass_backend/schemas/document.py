@@ -51,3 +51,24 @@ class DocumentListResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+class DocumentPreviewData(BaseModel):
+    document_id: UUID
+    file_name: str
+    file_type: str
+    preview_url: str
+    expires_at: str
+
+class DocumentPreviewResponse(BaseModel):
+    success: bool = True
+    data: DocumentPreviewData
+
+class DocumentDownloadData(BaseModel):
+    document_id: UUID
+    file_name: str
+    download_url: str
+    expires_at: str
+
+class DocumentDownloadResponse(BaseModel):
+    success: bool = True
+    data: DocumentDownloadData

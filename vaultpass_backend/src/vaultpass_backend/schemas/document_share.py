@@ -70,6 +70,8 @@ class SharedWithMeResponse(BaseModel):
     shared_at: datetime
     expires_at: Optional[datetime] = None
     is_active: bool
+    access_level: Optional[str] = None
+    allow_download: bool = True
 
     model_config = {
         "from_attributes": True

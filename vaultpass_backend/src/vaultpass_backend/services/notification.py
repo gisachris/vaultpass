@@ -360,8 +360,6 @@ class NotificationService:
             type=NotificationType.WARNING
         )
 
-    # ---- Internal Sharing Events ----
-
     @staticmethod
     async def notify_internal_share_received(
         db: AsyncSession,
@@ -382,6 +380,52 @@ class NotificationService:
             user_id=recipient_user_id,
             title="Document Shared With You",
             message=f"{owner_name} shared '{doc_title}' with you.",
+            type=NotificationType.INFO,
+            related_document_id=doc_id,
+            related_share_id=share_id,
+        )
+
+    # ---- Document Access Events (preview / download by share recipient) ----
+
+    @staticmethod
+    async def notify_document_previewed_by_recipient(
+        db: AsyncSession,
+        owner_id: uuid.UUID,
+        viewer_name: str,
+        doc_title: str,
+        doc_id: uuid.UUID,
+        share_id: uuid.UUID,
+    ) -> Optional[Notification]:
+        """
+        Notify the document owner that a share recipient has previewed their document.
+        """
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=owner_id,
+            title="Shared Document Previewed",
+            message=f"{viewer_name} previewed '{doc_title}'.",
+            type=NotificationType.INFO,
+            related_document_id=doc_id,
+            related_share_id=share_id,
+        )
+
+    @staticmethod
+    async def notify_document_downloaded_by_recipient(
+        db: AsyncSession,
+        owner_id: uuid.UUID,
+        downloader_name: str,
+        doc_title: str,
+        doc_id: uuid.UUID,
+        share_id: uuid.UUID,
+    ) -> Optional[Notification]:
+        """
+        Notify the document owner that a share recipient has downloaded their document.
+        """
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=owner_id,
+            title="Shared Document Downloaded",
+            message=f"{downloader_name} downloaded '{doc_title}'.",
             type=NotificationType.INFO,
             related_document_id=doc_id,
             related_share_id=share_id,

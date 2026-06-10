@@ -176,14 +176,20 @@ def test_router_get_details(mock_get_doc, override_auth_dependency, mock_user):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(doc_id)
 
-@patch("vaultpass_backend.api.documents.generate_download_link", new_callable=AsyncMock)
-def test_router_download(mock_gen_link, override_auth_dependency):
+@patch("vaultpass_backend.api.documents.DocumentAccessService.generate_download_url", new_callable=AsyncMock)
+def test_router_download(mock_gen_url, override_auth_dependency):
     doc_id = uuid.uuid4()
-    mock_gen_link.return_value = "https://example.com/signed-url"
+    mock_gen_url.return_value = {
+        "document_id": doc_id,
+        "file_name": "test.pdf",
+        "download_url": "https://example.com/signed-url",
+        "expires_at": "2026-06-10T12:00:00Z"
+    }
     
     response = client.get(f"/api/documents/{doc_id}/download")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["download_url"] == "https://example.com/signed-url"
+    assert response.json()["success"] is True
+    assert response.json()["data"]["download_url"] == "https://example.com/signed-url"
 
 @patch("vaultpass_backend.api.documents.update_document", new_callable=AsyncMock)
 def test_router_update(mock_update_doc, override_auth_dependency, mock_user):

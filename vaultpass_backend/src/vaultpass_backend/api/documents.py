@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, File, UploadFile, Form, status, Query
+from fastapi import APIRouter, Depends, File, UploadFile, Form, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.core.dependencies import get_db, get_current_user
@@ -12,6 +12,8 @@ from vaultpass_backend.schemas.document import (
     DocumentUpdateRequest,
     DocumentDetailResponse,
     DocumentListResponse,
+    DocumentPreviewResponse,
+    DocumentDownloadResponse,
 )
 from vaultpass_backend.services.document_service import (
     upload_document,
@@ -21,6 +23,7 @@ from vaultpass_backend.services.document_service import (
     update_document,
     delete_document,
 )
+from vaultpass_backend.services.document_access_service import DocumentAccessService
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -110,21 +113,56 @@ async def get_details(
     return DocumentDetailResponse.model_validate(doc)
 
 @router.get(
-    "/{id}/download",
+    "/{id}/preview",
+    response_model=DocumentPreviewResponse,
     status_code=status.HTTP_200_OK,
-    summary="Generate temporary download URL",
-    response_description="Temporary secure signed URL"
+    summary="Generate temporary preview URL",
+    response_description="Temporary secure signed preview URL"
 )
-async def download(
+async def preview(
     id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generate a secure, temporary (1-hour expiry) download URL for a document.
+    Generate a secure, temporary (10-minute expiry) preview URL for a document.
+    Accessible by owner or authorized share recipient.
     """
-    download_url = await generate_download_link(db=db, doc_id=id, user_id=current_user.id)
-    return {"download_url": download_url}
+    res = await DocumentAccessService.generate_preview_url(
+        db=db,
+        document_id=id,
+        requesting_user_id=current_user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent")
+    )
+    return DocumentPreviewResponse(success=True, data=res)
+
+@router.get(
+    "/{id}/download",
+    response_model=DocumentDownloadResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate temporary download URL",
+    response_description="Temporary secure signed download URL"
+)
+async def download(
+    id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a secure, temporary (15-minute expiry) download URL for a document.
+    Accessible by owner or authorized share recipient with download permission.
+    """
+    res = await DocumentAccessService.generate_download_url(
+        db=db,
+        document_id=id,
+        requesting_user_id=current_user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent")
+    )
+    return DocumentDownloadResponse(success=True, data=res)
 
 @router.put(
     "/{id}",
