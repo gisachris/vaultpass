@@ -91,3 +91,28 @@ export const DOCUMENT_CATEGORY_TYPE_MAP: Record<DocumentCategoryFilter, Document
   LEGAL: ['PROPERTY_DOCUMENT', 'WILL'],
   MEDICAL: [],
 };
+
+export interface DocumentPreviewData {
+  document_id: string;
+  file_name: string;
+  file_type: string;
+  preview_url: string;
+  expires_at: string;
+}
+
+export interface DocumentPreviewResponse {
+  success: boolean;
+  data: DocumentPreviewData;
+}
+
+export interface DocumentDownloadData {
+  document_id: string;
+  file_name: string;
+  download_url: string;
+  expires_at: string;
+}
+
+export interface DocumentDownloadResponse {
+  success: boolean;
+  data: DocumentDownloadData;
+}

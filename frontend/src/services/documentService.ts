@@ -5,11 +5,9 @@ import {
   DocumentType,
   DocumentUpdatePayload,
   DocumentUploadPayload,
+  DocumentPreviewResponse,
+  DocumentDownloadResponse,
 } from '../types/document';
-
-interface DownloadResponse {
-  download_url: string;
-}
 
 export async function fetchDocuments(
   page: number,
@@ -31,9 +29,31 @@ export async function fetchDocumentDetails(documentId: string): Promise<Document
   return response.data;
 }
 
+/** Returns a signed preview URL (10-minute expiry). */
+export async function previewDocumentUrl(documentId: string): Promise<string> {
+  const response = await api.get<DocumentPreviewResponse>(`/documents/${documentId}/preview`);
+  return response.data.data.preview_url;
+}
+
+/** Returns a signed download URL (15-minute expiry). */
 export async function downloadDocumentUrl(documentId: string): Promise<string> {
-  const response = await api.get<DownloadResponse>(`/documents/${documentId}/download`);
-  return response.data.download_url;
+  const response = await api.get<DocumentDownloadResponse>(`/documents/${documentId}/download`);
+  return response.data.data.download_url;
+}
+
+/**
+ * Trigger a file download without navigating away.
+ * Creates a hidden anchor, clicks it, and removes it.
+ */
+export function triggerFileDownload(fileName: string, url: string): void {
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
 }
 
 export async function uploadDocument(payload: DocumentUploadPayload): Promise<DocumentModel> {

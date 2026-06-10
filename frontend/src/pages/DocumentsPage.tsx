@@ -1,7 +1,7 @@
 import { DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { deleteDocument, downloadDocumentUrl, updateDocument } from '../services/documentService';
+import { deleteDocument, downloadDocumentUrl, updateDocument, triggerFileDownload } from '../services/documentService';
 import {
   fetchDocumentShares,
   buildShareInfoMap,
@@ -14,6 +14,7 @@ import { UploadDocumentModal } from '../components/documents/UploadDocumentModal
 import { DocumentDetailsModal } from '../components/documents/DocumentDetailsModal';
 import { EditDocumentModal } from '../components/documents/EditDocumentModal';
 import { DocumentSharingModal } from '../components/documents/DocumentSharingModal';
+import { DocumentPreviewModal } from '../components/documents/DocumentPreviewModal';
 import { AppSidebar } from '../components/ui/AppSidebar';
 import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './DocumentsPage.css';
@@ -33,6 +34,7 @@ export function DocumentsPage() {
   const [pendingDelete, setPendingDelete] = useState<DocumentModel | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [shareMap, setShareMap] = useState<Record<string, DocumentShareInfo>>({});
+  const [previewDoc, setPreviewDoc] = useState<DocumentModel | null>(null);
 
   const loadShareMap = async () => {
     try {
@@ -120,13 +122,17 @@ export function DocumentsPage() {
   const handleDownloadDocument = async (document: DocumentModel) => {
     try {
       const url = await downloadDocumentUrl(document.id);
-      window.open(url, '_blank');
+      triggerFileDownload(document.file_name, url);
     } catch (err) {
       toast.error('Failed to prepare document download.');
       if ((err as any)?.response?.status === 401) {
         navigate('/login');
       }
     }
+  };
+
+  const handlePreviewDocument = (document: DocumentModel) => {
+    setPreviewDoc(document);
   };
 
   const requestDeleteDocument = (document: DocumentModel) => {
@@ -324,6 +330,7 @@ export function DocumentsPage() {
                   document={document}
                   shareInfo={shareMap[document.id]}
                   onViewDetails={handleViewDetails}
+                  onPreview={handlePreviewDocument}
                   onDownload={handleDownloadDocument}
                   onEdit={handleEditDocument}
                   onDelete={requestDeleteDocument}
@@ -441,6 +448,13 @@ export function DocumentsPage() {
           loadShareMap();
         }}
       />
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          document={previewDoc}
+          onClose={() => setPreviewDoc(null)}
+        />
+      )}
     </div>
   );
 }

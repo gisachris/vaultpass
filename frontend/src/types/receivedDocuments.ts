@@ -10,6 +10,7 @@ export interface ReceivedShare {
   expires_at: string | null;
   is_active: boolean;
   access_level?: AccessLevel | null;
+  allow_download?: boolean;
 }
 
 export interface ReceivedShareDetail extends ReceivedShare {

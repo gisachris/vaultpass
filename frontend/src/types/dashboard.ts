@@ -4,6 +4,8 @@ export interface DashboardSummary {
   active_shares: number;
   unread_notifications: number;
   shared_with_me_count: number;
+  documents_previewed_count?: number;
+  documents_downloaded_count?: number;
 }
 
 export interface DocumentHealth {

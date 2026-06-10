@@ -71,6 +71,10 @@ class DocumentShareService:
         from vaultpass_backend.core.security import get_password_hash
         password_hash = get_password_hash(share_data.password) if getattr(share_data, 'password', None) else None
 
+        # Set allow_download = False if access_level is 'view' for internal shares
+        raw_allow_download = getattr(share_data, 'allow_download', True)
+        allow_download = False if getattr(share_data, 'access_level', None) == "view" else raw_allow_download
+
         new_share = DocumentShare(
             document_id=share_data.document_id,
             contact_id=share_data.contact_id,
@@ -80,7 +84,7 @@ class DocumentShareService:
             is_active=True,
             recipient_user_id=contact.linked_user_id,  # None for external shares
             access_level=getattr(share_data, 'access_level', None),
-            allow_download=getattr(share_data, 'allow_download', True),
+            allow_download=allow_download,
             password_hash=password_hash,
         )
 
@@ -385,6 +389,8 @@ class DocumentShareService:
                     shared_at=s.created_at,
                     expires_at=s.expires_at,
                     is_active=s.is_active,
+                    access_level=s.access_level,
+                    allow_download=s.allow_download,
                 )
             )
         return result
@@ -426,4 +432,6 @@ class DocumentShareService:
             expires_at=share.expires_at,
             is_active=share.is_active,
             last_accessed_at=share.last_accessed_at,
+            access_level=share.access_level,
+            allow_download=share.allow_download,
         )

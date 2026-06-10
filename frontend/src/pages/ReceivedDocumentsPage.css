@@ -426,6 +426,22 @@
   color: #475569;
 }
 
+.modal-btn--ghost {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-btn--ghost:hover {
+  background: #f8fafc;
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ─── Loading spinner ─────────────────────────────────────────────────────── */
 .spinner {
   width: 36px;

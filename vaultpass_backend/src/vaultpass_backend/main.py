@@ -87,6 +87,7 @@ app.include_router(notifications_router, prefix="/api")
 app.include_router(audit_logs_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(public_shares_router, prefix="/api")
 app.include_router(public_shares_router)
 
 

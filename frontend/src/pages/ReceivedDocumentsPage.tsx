@@ -4,7 +4,9 @@ import { formatDistanceToNow, parseISO, format } from 'date-fns';
 import { toast } from 'sonner';
 import { AppSidebar } from '../components/ui/AppSidebar';
 import { UserProfileMenu } from '../components/profile/UserProfileMenu';
+import { DocumentPreviewModal } from '../components/documents/DocumentPreviewModal';
 import { fetchReceivedShares, fetchReceivedShareDetail } from '../services/sharedDocumentsService';
+import { downloadDocumentUrl, triggerFileDownload } from '../services/documentService';
 import { ACCESS_LEVEL_LABELS } from '../services/documentShareService';
 import type { ReceivedShare, ReceivedShareDetail } from '../types/receivedDocuments';
 import './ReceivedDocumentsPage.css';
@@ -38,6 +40,8 @@ export function ReceivedDocumentsPage() {
   const [selectedShare, setSelectedShare] = useState<ReceivedShareDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [previewingDocId, setPreviewingDocId] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   // If routed here from a notification with a share_id query param, open it automatically
   useEffect(() => {
@@ -87,9 +91,36 @@ export function ReceivedDocumentsPage() {
     navigate('/received-documents', { replace: true });
   };
 
+  const handlePreview = (share: ReceivedShareDetail) => {
+    setPreviewingDocId(share.document_id);
+  };
+
+  const handleDownload = async (share: ReceivedShareDetail) => {
+    if (downloading) return;
+    if (share.allow_download === false) {
+      toast.error('Download is not allowed for this share.');
+      return;
+    }
+    setDownloading(true);
+    try {
+      const url = await downloadDocumentUrl(share.document_id);
+      triggerFileDownload(share.document_title, url);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 403) {
+        toast.error('You do not have download permission for this document.');
+      } else {
+        toast.error('Failed to prepare download. Please try again.');
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <div className="received-layout">
-      <AppSidebar />
+    <>
+      <div className="received-layout">
+        <AppSidebar />
 
       <div className="received-main">
         {/* Topbar */}
@@ -258,7 +289,7 @@ export function ReceivedDocumentsPage() {
                           : 'Not yet accessed'}
                       </p>
                     </div>
-                     <div className="modal-field">
+                    <div className="modal-field">
                       <label>Status</label>
                       <p className={selectedShare.is_active ? 'text-green' : 'text-red'}>
                         {selectedShare.is_active ? 'Active' : 'Revoked'}
@@ -279,16 +310,25 @@ export function ReceivedDocumentsPage() {
                   <button
                     type="button"
                     className="modal-btn modal-btn--primary"
-                    onClick={() =>
-                      toast.info('Download requires a secure session link from the document owner.')
-                    }
+                    onClick={() => handlePreview(selectedShare)}
                   >
-                    <span className="material-symbols-outlined">download</span>
-                    Download
+                    <span className="material-symbols-outlined">visibility</span>
+                    Preview
                   </button>
+                  {selectedShare.allow_download !== false && (
+                    <button
+                      type="button"
+                      className="modal-btn modal-btn--secondary"
+                      onClick={() => handleDownload(selectedShare)}
+                      disabled={downloading}
+                    >
+                      <span className="material-symbols-outlined">{downloading ? 'hourglass_top' : 'download'}</span>
+                      {downloading ? 'Preparing…' : 'Download'}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="modal-btn modal-btn--secondary"
+                    className="modal-btn modal-btn--ghost"
                     onClick={closeModal}
                   >
                     Close
@@ -300,5 +340,15 @@ export function ReceivedDocumentsPage() {
         </div>
       )}
     </div>
+
+    {previewingDocId && (
+      <DocumentPreviewModal
+        documentId={previewingDocId}
+        documentName={selectedShare?.document_title}
+        allowDownload={selectedShare?.allow_download !== false}
+        onClose={() => setPreviewingDocId(null)}
+      />
+    )}
+    </>
   );
 }

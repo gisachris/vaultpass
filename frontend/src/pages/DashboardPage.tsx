@@ -37,6 +37,8 @@ function getExpiryStatusLabel(daysRemaining: number): string {
 
 function getActivityIcon(action: string): string {
   if (action.includes('LOGIN')) return 'login';
+  if (action === 'DOCUMENT_PREVIEWED') return 'visibility';
+  if (action === 'DOCUMENT_DOWNLOADED') return 'download';
   if (action.includes('DOCUMENT')) return 'description';
   if (action.includes('CONTACT') || action.includes('TRUSTED')) return 'group';
   if (action.includes('SHARE')) return 'share';
@@ -54,6 +56,12 @@ function humanizeActivityDescription(action: string, description: string): strin
   }
   if (action === 'SHARE_REVOKED') {
     return 'Revoked shared access to a document';
+  }
+  if (action === 'DOCUMENT_PREVIEWED') {
+    return description || 'Previewed a document';
+  }
+  if (action === 'DOCUMENT_DOWNLOADED') {
+    return description || 'Downloaded a document';
   }
   return description;
 }
@@ -211,6 +219,32 @@ export function DashboardPage() {
                 <p className="metric-sublabel">Unread alerts</p>
               </div>
             </div>
+
+            {(data.summary.documents_previewed_count !== undefined) && (
+              <div className="metric-card">
+                <div className="metric-icon">
+                  <span className="material-symbols-outlined">visibility</span>
+                </div>
+                <div className="metric-content">
+                  <p className="metric-label">Previews</p>
+                  <h3 className="metric-value">{data.summary.documents_previewed_count ?? 0}</h3>
+                  <p className="metric-sublabel">Documents previewed</p>
+                </div>
+              </div>
+            )}
+
+            {(data.summary.documents_downloaded_count !== undefined) && (
+              <div className="metric-card">
+                <div className="metric-icon">
+                  <span className="material-symbols-outlined">download</span>
+                </div>
+                <div className="metric-content">
+                  <p className="metric-label">Downloads</p>
+                  <h3 className="metric-value">{data.summary.documents_downloaded_count ?? 0}</h3>
+                  <p className="metric-sublabel">Documents downloaded</p>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* ── Main Grid ──────────────────────────────────────────────── */}

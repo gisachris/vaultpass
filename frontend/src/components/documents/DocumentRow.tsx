@@ -5,6 +5,7 @@ import type { DocumentShareInfo } from '../../services/documentShareService';
 interface DocumentRowProps {
   document: DocumentModel;
   onViewDetails: (document: DocumentModel) => void;
+  onPreview: (document: DocumentModel) => void;
   onDownload: (document: DocumentModel) => void;
   onEdit: (document: DocumentModel) => void;
   onDelete: (document: DocumentModel) => void;
@@ -76,7 +77,7 @@ function ShareBadges({ info }: { info: DocumentShareInfo }) {
   );
 }
 
-export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDelete, onShare, shareInfo }: DocumentRowProps) {
+export function DocumentRow({ document, onViewDetails, onPreview, onDownload, onEdit, onDelete, onShare, shareInfo }: DocumentRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const expiry = useMemo(() => getExpiryStatus(document), [document]);
@@ -140,17 +141,21 @@ export function DocumentRow({ document, onViewDetails, onDownload, onEdit, onDel
           </button>
           {menuOpen && (
             <div className="document-row-menu" role="menu">
-              <button type="button" onClick={() => { setMenuOpen(false); onViewDetails(document); }}>
-                <span className="material-symbols-outlined">info</span>
-                View details
+              <button type="button" onClick={() => { setMenuOpen(false); onPreview(document); }}>
+                <span className="material-symbols-outlined">visibility</span>
+                Preview
+              </button>
+              <button type="button" onClick={() => { setMenuOpen(false); onDownload(document); }}>
+                <span className="material-symbols-outlined">download</span>
+                Download
               </button>
               <button type="button" onClick={() => { setMenuOpen(false); onShare(document); }}>
                 <span className="material-symbols-outlined">share</span>
                 Share document
               </button>
-              <button type="button" onClick={() => { setMenuOpen(false); onDownload(document); }}>
-                <span className="material-symbols-outlined">download</span>
-                Download
+              <button type="button" onClick={() => { setMenuOpen(false); onViewDetails(document); }}>
+                <span className="material-symbols-outlined">info</span>
+                View details
               </button>
               <button type="button" onClick={() => { setMenuOpen(false); onEdit(document); }}>
                 <span className="material-symbols-outlined">edit</span>
