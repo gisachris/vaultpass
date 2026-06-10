@@ -1,13 +1,22 @@
-import { DragEvent, FormEvent, useRef, useState } from 'react';
+import { DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { deleteDocument, downloadDocumentUrl, updateDocument } from '../services/documentService';
+import { deleteDocument, downloadDocumentUrl, updateDocument, triggerFileDownload } from '../services/documentService';
+import {
+  fetchDocumentShares,
+  buildShareInfoMap,
+  DocumentShareInfo,
+} from '../services/documentShareService';
 import { useDocuments } from '../hooks/useDocuments';
 import { DocumentModel, DOCUMENT_CATEGORY_BUTTONS } from '../types/document';
 import { DocumentRow } from '../components/documents/DocumentRow';
 import { UploadDocumentModal } from '../components/documents/UploadDocumentModal';
 import { DocumentDetailsModal } from '../components/documents/DocumentDetailsModal';
 import { EditDocumentModal } from '../components/documents/EditDocumentModal';
+import { DocumentSharingModal } from '../components/documents/DocumentSharingModal';
+import { DocumentPreviewModal } from '../components/documents/DocumentPreviewModal';
+import { AppSidebar } from '../components/ui/AppSidebar';
+import { UserProfileMenu } from '../components/profile/UserProfileMenu';
 import './DocumentsPage.css';
 
 export function DocumentsPage() {
@@ -18,11 +27,23 @@ export function DocumentsPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<DocumentModel | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [shareMap, setShareMap] = useState<Record<string, DocumentShareInfo>>({});
+  const [previewDoc, setPreviewDoc] = useState<DocumentModel | null>(null);
+
+  const loadShareMap = async () => {
+    try {
+      const shares = await fetchDocumentShares();
+      setShareMap(buildShareInfoMap(shares));
+    } catch {
+      // non-critical — badges just won't show
+    }
+  };
 
   const {
     visibleDocuments,
@@ -93,16 +114,25 @@ export function DocumentsPage() {
     setEditOpen(true);
   };
 
+  const handleShareDocument = (document: DocumentModel) => {
+    setSelectedDocument(document);
+    setShareOpen(true);
+  };
+
   const handleDownloadDocument = async (document: DocumentModel) => {
     try {
       const url = await downloadDocumentUrl(document.id);
-      window.open(url, '_blank');
+      triggerFileDownload(document.file_name, url);
     } catch (err) {
       toast.error('Failed to prepare document download.');
       if ((err as any)?.response?.status === 401) {
         navigate('/login');
       }
     }
+  };
+
+  const handlePreviewDocument = (document: DocumentModel) => {
+    setPreviewDoc(document);
   };
 
   const requestDeleteDocument = (document: DocumentModel) => {
@@ -168,54 +198,23 @@ export function DocumentsPage() {
     }
   };
 
+  useEffect(() => {
+    loadShareMap();
+  }, [visibleDocuments]);
+
   const activeCount = visibleDocuments.length;
   const showEmptyState = !loading && activeCount === 0;
 
+  const uploadCta = (
+    <button type="button" className="button button-primary" onClick={handleOpenFilePicker}>
+      <span className="material-symbols-outlined">upload_file</span>
+      Upload Document
+    </button>
+  );
+
   return (
     <div className="documents-page">
-      <nav className="documents-sidebar">
-        <div className="documents-logo">
-          <span>VaultPass</span>
-          <span>Secure Document Vault</span>
-        </div>
-
-        <div className="documents-sidebar-cta">
-          <button type="button" className="button button-primary" onClick={handleOpenFilePicker}>
-            <span className="material-symbols-outlined">upload_file</span>
-            Upload Document
-          </button>
-        </div>
-
-        <div className="documents-sidebar-links">
-          <Link to="/" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/documents" className="documents-sidebar-link documents-sidebar-link--active">
-            <span className="material-symbols-outlined">description</span>
-            <span>Documents</span>
-          </Link>
-          <Link to="/trusted-contacts" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">group</span>
-            <span>Trusted Contacts</span>
-          </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
-            <span className="material-symbols-outlined">share</span>
-            <span>Shared Access</span>
-          </button>
-        </div>
-
-        <div className="documents-sidebar-footer">
-          <Link to="/notifications" className="documents-sidebar-link">
-            <span className="material-symbols-outlined">notifications</span>
-            <span>Notifications</span>
-          </Link>
-          <button type="button" className="documents-sidebar-link documents-sidebar-link--disabled">
-            <span className="material-symbols-outlined">settings</span>
-            <span>Settings</span>
-          </button>
-        </div>
-      </nav>
+      <AppSidebar cta={uploadCta} />
 
       <div className="documents-main">
         <header className="documents-topbar">
@@ -233,12 +232,7 @@ export function DocumentsPage() {
             <button type="button" className="icon-button" aria-label="Help">
               <span className="material-symbols-outlined">help_outline</span>
             </button>
-            <div className="documents-profile">
-              <img
-                src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=256&q=80"
-                alt="User profile"
-              />
-            </div>
+            <UserProfileMenu variant="topbar" />
           </div>
         </header>
 
@@ -334,10 +328,13 @@ export function DocumentsPage() {
                 <DocumentRow
                   key={document.id}
                   document={document}
+                  shareInfo={shareMap[document.id]}
                   onViewDetails={handleViewDetails}
+                  onPreview={handlePreviewDocument}
                   onDownload={handleDownloadDocument}
                   onEdit={handleEditDocument}
                   onDelete={requestDeleteDocument}
+                  onShare={handleShareDocument}
                 />
               ))
             )}
@@ -394,6 +391,7 @@ export function DocumentsPage() {
             requestDeleteDocument(selectedDocument);
           }
         }}
+        onShareRefresh={loadShareMap}
       />
 
       {confirmDeleteOpen && pendingDelete && (
@@ -441,6 +439,22 @@ export function DocumentsPage() {
           return Promise.resolve();
         }}
       />
+
+      <DocumentSharingModal
+        open={shareOpen}
+        document={selectedDocument}
+        onClose={() => {
+          setShareOpen(false);
+          loadShareMap();
+        }}
+      />
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          document={previewDoc}
+          onClose={() => setPreviewDoc(null)}
+        />
+      )}
     </div>
   );
 }

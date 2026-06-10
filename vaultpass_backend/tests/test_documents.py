@@ -51,8 +51,9 @@ def test_upload_document_validation_oversized(override_auth_dependency):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "exceeds maximum limit" in response.json()["detail"]
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_uploaded", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.document_service.storage_service.upload_file", new_callable=AsyncMock)
-def test_service_upload_document_success(mock_upload, mock_user):
+def test_service_upload_document_success(mock_upload, mock_notify_uploaded, mock_user):
     from vaultpass_backend.services.document_service import upload_document
     import asyncio
     
@@ -84,7 +85,10 @@ def test_service_upload_document_success(mock_upload, mock_user):
     assert doc.owner_id == mock_user.id
     assert doc.file_name == "passport.pdf"
     mock_upload.assert_called_once()
-    mock_db.add.assert_called_once()
+    # db.add is now called for both the Document and the AuditLog, so assert
+    # that a Document instance was among the added objects.
+    added_types = [type(call.args[0]).__name__ for call in mock_db.add.call_args_list]
+    assert "Document" in added_types
     mock_db.commit.assert_called_once()
 
 @patch("vaultpass_backend.api.documents.upload_document", new_callable=AsyncMock)
@@ -172,14 +176,20 @@ def test_router_get_details(mock_get_doc, override_auth_dependency, mock_user):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(doc_id)
 
-@patch("vaultpass_backend.api.documents.generate_download_link", new_callable=AsyncMock)
-def test_router_download(mock_gen_link, override_auth_dependency):
+@patch("vaultpass_backend.api.documents.DocumentAccessService.generate_download_url", new_callable=AsyncMock)
+def test_router_download(mock_gen_url, override_auth_dependency):
     doc_id = uuid.uuid4()
-    mock_gen_link.return_value = "https://example.com/signed-url"
+    mock_gen_url.return_value = {
+        "document_id": doc_id,
+        "file_name": "test.pdf",
+        "download_url": "https://example.com/signed-url",
+        "expires_at": "2026-06-10T12:00:00Z"
+    }
     
     response = client.get(f"/api/documents/{doc_id}/download")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["download_url"] == "https://example.com/signed-url"
+    assert response.json()["success"] is True
+    assert response.json()["data"]["download_url"] == "https://example.com/signed-url"
 
 @patch("vaultpass_backend.api.documents.update_document", new_callable=AsyncMock)
 def test_router_update(mock_update_doc, override_auth_dependency, mock_user):
@@ -309,7 +319,8 @@ def test_service_get_documents_success(mock_user):
     assert items == [mock_doc]
     assert total == 1
 
-def test_service_update_document_success(mock_user):
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_updated", new_callable=AsyncMock)
+def test_service_update_document_success(mock_notify_updated, mock_user):
     from vaultpass_backend.services.document_service import update_document
     from vaultpass_backend.schemas.document import DocumentUpdateRequest
     import asyncio
@@ -334,8 +345,9 @@ def test_service_update_document_success(mock_user):
     assert updated_doc.title == "New Title"
     mock_db.commit.assert_called_once()
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_document_deleted", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.document_service.storage_service.delete_file", new_callable=AsyncMock)
-def test_service_delete_document_success(mock_delete_file, mock_user):
+def test_service_delete_document_success(mock_delete_file, mock_notify_deleted, mock_user):
     from vaultpass_backend.services.document_service import delete_document
     import asyncio
     

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { User, LoginCredentials, RegisterCredentials, AuthContextType } from '../types/auth';
 
@@ -8,27 +8,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const loadUser = useCallback(async () => {
+    const token = localStorage.getItem('vaultpass_token');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await api.get<User>('/auth/me');
+      setUser(response.data);
+    } catch (error) {
+      console.error('Failed to load user session', error);
+      localStorage.removeItem('vaultpass_token');
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Check token and verify user session on mount
   useEffect(() => {
-    async function loadUser() {
-      const token = localStorage.getItem('vaultpass_token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await api.get<User>('/auth/me');
-        setUser(response.data);
-      } catch (error) {
-        console.error('Failed to load user session', error);
-        localStorage.removeItem('vaultpass_token');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadUser();
-  }, []);
+  }, [loadUser]);
 
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
@@ -61,8 +63,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    await loadUser();
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

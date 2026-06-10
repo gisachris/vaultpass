@@ -2,9 +2,11 @@ import uuid
 import logging
 from typing import Tuple, List, Optional
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.models.trusted_contact import TrustedContact
+from vaultpass_backend.models.user import User
 from vaultpass_backend.repository.trusted_contact import TrustedContactRepository
 from vaultpass_backend.schemas.trusted_contact import TrustedContactCreate, TrustedContactUpdate
 
@@ -24,6 +26,7 @@ class TrustedContactService:
         """
         Create a new trusted contact.
         Validates that email is unique for this owner.
+        Automatically links to an existing VaultPass account if the email matches.
         """
         # Check duplicate contacts for this owner
         existing = await TrustedContactRepository.get_contact_by_email(
@@ -37,17 +40,42 @@ class TrustedContactService:
                 detail="Trusted contact with this email already exists"
             )
 
+        # Auto-link to a registered VaultPass user by email match
+        user_result = await db.execute(
+            select(User).where(User.email == contact_data.email)
+        )
+        matched_user = user_result.scalar_one_or_none()
+        linked_user_id = matched_user.id if matched_user else None
+
         contact = TrustedContact(
             owner_id=owner_id,
             full_name=contact_data.full_name,
             email=contact_data.email,
             phone_number=contact_data.phone_number,
             relationship=contact_data.relationship,
-            notes=contact_data.notes
+            notes=contact_data.notes,
+            linked_user_id=linked_user_id,
         )
 
         created_contact = await TrustedContactRepository.create_contact(db, contact)
-        logger.info(f"User {owner_id} created trusted contact {created_contact.id}")
+        logger.info(f"User {owner_id} created trusted contact {created_contact.id} (linked_user_id={linked_user_id})")
+
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_contact_added(db, owner_id, created_contact.id, created_contact.full_name)
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=owner_id,
+            action=constants.CONTACT_CREATED,
+            entity_type="TRUSTED_CONTACT",
+            entity_id=created_contact.id,
+            description=f"Trusted contact '{created_contact.full_name}' created.",
+        )
+
         return created_contact
 
     @staticmethod
@@ -93,7 +121,7 @@ class TrustedContactService:
         if not update_dict:
             return contact
 
-        # If email is being updated, verify it doesn't conflict with another contact owned by this user
+        # If email is being updated, verify no conflict and re-evaluate the linked user
         new_email = update_dict.get("email")
         if new_email and new_email != contact.email:
             existing = await TrustedContactRepository.get_contact_by_email(
@@ -106,9 +134,32 @@ class TrustedContactService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Trusted contact with this email already exists"
                 )
+            # Re-link (or unlink) based on the new email
+            user_result = await db.execute(
+                select(User).where(User.email == new_email)
+            )
+            matched_user = user_result.scalar_one_or_none()
+            update_dict["linked_user_id"] = matched_user.id if matched_user else None
 
         updated_contact = await TrustedContactRepository.update_contact(db, contact, update_dict)
         logger.info(f"User {user_id} updated trusted contact {contact_id}")
+
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_contact_updated(db, user_id, updated_contact.id, updated_contact.full_name)
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=user_id,
+            action=constants.CONTACT_UPDATED,
+            entity_type="TRUSTED_CONTACT",
+            entity_id=updated_contact.id,
+            description=f"Trusted contact '{updated_contact.full_name}' updated.",
+        )
+
         return updated_contact
 
     @staticmethod
@@ -122,8 +173,25 @@ class TrustedContactService:
         Verifies ownership.
         """
         contact = await TrustedContactService.get_contact_by_id(db, contact_id, user_id)
+        contact_name = contact.full_name
         await TrustedContactRepository.delete_contact(db, contact)
         logger.info(f"User {user_id} deleted trusted contact {contact_id}")
+
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_contact_deleted(db, user_id, contact_name)
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=user_id,
+            action=constants.CONTACT_DELETED,
+            entity_type="TRUSTED_CONTACT",
+            entity_id=contact_id,
+            description=f"Trusted contact '{contact_name}' deleted.",
+        )
 
     @staticmethod
     async def list_contacts(

@@ -1,0 +1,824 @@
+{
+    "modules": [
+        {
+            "name": "Trusted Contacts",
+            "base_path": "/api/v1/trusted-contacts",
+            "endpoints": [
+                {
+                    "method": "POST",
+                    "path": "/",
+                    "summary": "Create a new trusted contact",
+                    "description": "Allows an authenticated user to add a new contact to their private trusted contacts book. Enforces duplicate email checks per user.",
+                    "request_body": {
+                        "full_name": {
+                            "type": "string",
+                            "required": true,
+                            "min_length": 2,
+                            "max_length": 255,
+                            "description": "Full name of the contact"
+                        },
+                        "email": {
+                            "type": "string",
+                            "required": true,
+                            "format": "email",
+                            "description": "Unique email address for this owner"
+                        },
+                        "phone_number": {
+                            "type": "string",
+                            "required": false,
+                            "max_length": 50,
+                            "description": "Optional phone number"
+                        },
+                        "relationship": {
+                            "type": "string",
+                            "required": true,
+                            "max_length": 100,
+                            "description": "Relationship with owner (e.g., Parent, Spouse, Friend, Lawyer)"
+                        },
+                        "notes": {
+                            "type": "string",
+                            "required": false,
+                            "max_length": 1000,
+                            "description": "Optional additional notes"
+                        }
+                    },
+                    "responses": {
+                        "201": {
+                            "description": "Created successfully",
+                            "body": {
+                                "message": "Trusted contact created successfully",
+                                "data": {
+                                    "id": "uuid",
+                                    "full_name": "string",
+                                    "email": "string",
+                                    "phone_number": "string | null",
+                                    "relationship": "string",
+                                    "notes": "string | null",
+                                    "created_at": "datetime",
+                                    "updated_at": "datetime | null"
+                                }
+                            }
+                        },
+                        "409": {
+                            "description": "Conflict (Duplicate email for this owner)"
+                        },
+                        "422": {
+                            "description": "Validation Error (Invalid input format)"
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/",
+                    "summary": "List trusted contacts",
+                    "description": "Retrieve a paginated list of trusted contacts owned by the authenticated user.",
+                    "query_parameters": {
+                        "page": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1,
+                            "description": "Page number to retrieve"
+                        },
+                        "page_size": {
+                            "type": "integer",
+                            "default": 10,
+                            "minimum": 1,
+                            "maximum": 100,
+                            "description": "Number of items per page"
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "items": [
+                                    {
+                                        "id": "uuid",
+                                        "full_name": "string",
+                                        "email": "string",
+                                        "phone_number": "string | null",
+                                        "relationship": "string",
+                                        "notes": "string | null",
+                                        "created_at": "datetime",
+                                        "updated_at": "datetime | null"
+                                    }
+                                ],
+                                "total": "integer",
+                                "page": "integer",
+                                "page_size": "integer"
+                            }
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/search",
+                    "summary": "Search trusted contacts",
+                    "description": "Search user's trusted contacts matching full_name, email, or relationship (case-insensitive and paginated).",
+                    "query_parameters": {
+                        "q": {
+                            "type": "string",
+                            "required": true,
+                            "description": "Search query string"
+                        },
+                        "page": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1,
+                            "description": "Page number"
+                        },
+                        "page_size": {
+                            "type": "integer",
+                            "default": 10,
+                            "minimum": 1,
+                            "maximum": 100,
+                            "description": "Items per page"
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "items": [
+                                    {
+                                        "id": "uuid",
+                                        "full_name": "string",
+                                        "email": "string",
+                                        "phone_number": "string | null",
+                                        "relationship": "string",
+                                        "notes": "string | null",
+                                        "created_at": "datetime",
+                                        "updated_at": "datetime | null"
+                                    }
+                                ],
+                                "total": "integer",
+                                "page": "integer",
+                                "page_size": "integer"
+                            }
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/{contact_id}",
+                    "summary": "Get a trusted contact",
+                    "description": "Retrieve detailed information of a specific trusted contact. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "contact_id": {
+                            "type": "uuid",
+                            "required": true,
+                            "description": "ID of the trusted contact"
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "id": "uuid",
+                                "full_name": "string",
+                                "email": "string",
+                                "phone_number": "string | null",
+                                "relationship": "string",
+                                "notes": "string | null",
+                                "created_at": "datetime",
+                                "updated_at": "datetime | null"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Contact owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Contact does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "PATCH",
+                    "path": "/{contact_id}",
+                    "summary": "Update a trusted contact",
+                    "description": "Partially update details of an existing trusted contact. Enforces ownership authorization and duplicate email checks.",
+                    "path_parameters": {
+                        "contact_id": {
+                            "type": "uuid",
+                            "required": true,
+                            "description": "ID of the trusted contact"
+                        }
+                    },
+                    "request_body": {
+                        "full_name": {
+                            "type": "string",
+                            "required": false,
+                            "min_length": 2,
+                            "max_length": 255
+                        },
+                        "email": {
+                            "type": "string",
+                            "required": false,
+                            "format": "email"
+                        },
+                        "phone_number": {
+                            "type": "string",
+                            "required": false,
+                            "max_length": 50
+                        },
+                        "relationship": {
+                            "type": "string",
+                            "required": false,
+                            "max_length": 100
+                        },
+                        "notes": {
+                            "type": "string",
+                            "required": false,
+                            "max_length": 1000
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Updated successfully",
+                            "body": {
+                                "id": "uuid",
+                                "full_name": "string",
+                                "email": "string",
+                                "phone_number": "string | null",
+                                "relationship": "string",
+                                "notes": "string | null",
+                                "created_at": "datetime",
+                                "updated_at": "datetime"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Contact owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Contact does not exist)"
+                        },
+                        "409": {
+                            "description": "Conflict (Duplicate email for this owner)"
+                        }
+                    }
+                },
+                {
+                    "method": "DELETE",
+                    "path": "/{contact_id}",
+                    "summary": "Delete a trusted contact",
+                    "description": "Permanently deletes a trusted contact from the database. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "contact_id": {
+                            "type": "uuid",
+                            "required": true,
+                            "description": "ID of the trusted contact"
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Deleted successfully",
+                            "body": {
+                                "message": "Trusted contact deleted successfully"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Contact owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Contact does not exist)"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Shared Access",
+            "base_path": "/api/v1/shares",
+            "endpoints": [
+                {
+                    "method": "POST",
+                    "path": "/",
+                    "summary": "Create a new document share link",
+                    "description": "Generates a secure access link for sharing a specific document with a trusted contact. Enforces document and contact ownership validation.",
+                    "request_body": {
+                        "document_id": {
+                            "type": "uuid",
+                            "required": true,
+                            "description": "ID of the document to share"
+                        },
+                        "contact_id": {
+                            "type": "uuid",
+                            "required": true,
+                            "description": "ID of the trusted contact to share with"
+                        },
+                        "expires_at": {
+                            "type": "string",
+                            "required": false,
+                            "format": "date-time",
+                            "description": "Optional expiration date and time for the link"
+                        }
+                    },
+                    "responses": {
+                        "201": {
+                            "description": "Created successfully",
+                            "body": {
+                                "id": "uuid",
+                                "document_id": "uuid",
+                                "contact_id": "uuid",
+                                "owner_id": "uuid",
+                                "access_token": "string",
+                                "share_link": "string",
+                                "is_active": "boolean",
+                                "expires_at": "string | null",
+                                "last_accessed_at": "string | null",
+                                "created_at": "string",
+                                "updated_at": "string | null"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Not authorized to access the document or trusted contact)"
+                        },
+                        "404": {
+                            "description": "Not Found (Document or contact not found)"
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/",
+                    "summary": "List user's document shares",
+                    "description": "Retrieve all document sharing links created by the currently authenticated user.",
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": [
+                                {
+                                    "id": "uuid",
+                                    "document_id": "uuid",
+                                    "contact_id": "uuid",
+                                    "owner_id": "uuid",
+                                    "access_token": "string",
+                                    "share_link": "string",
+                                    "is_active": "boolean",
+                                    "expires_at": "string | null",
+                                    "last_accessed_at": "string | null",
+                                    "created_at": "string",
+                                    "updated_at": "string | null"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/{share_id}",
+                    "summary": "Get document share details",
+                    "description": "Retrieve detailed metadata of a specific share link. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "share_id": {
+                            "type": "uuid",
+                            "required": true,
+                            "description": "ID of the document share link"
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "id": "uuid",
+                                "document_id": "uuid",
+                                "contact_id": "uuid",
+                                "owner_id": "uuid",
+                                "access_token": "string",
+                                "share_link": "string",
+                                "is_active": "boolean",
+                                "expires_at": "string | null",
+                                "last_accessed_at": "string | null",
+                                "created_at": "string",
+                                "updated_at": "string | null"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Share link owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Share link does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "PUT",
+                    "path": "/{share_id}",
+                    "summary": "Update document share configuration",
+                    "description": "Modify parameters of an existing document share link, such as expiration or active status. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "share_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "request_body": {
+                        "expires_at": {
+                            "type": "string",
+                            "required": false,
+                            "format": "date-time"
+                        },
+                        "is_active": {
+                            "type": "boolean",
+                            "required": false
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Updated successfully",
+                            "body": {
+                                "id": "uuid",
+                                "is_active": "boolean",
+                                "expires_at": "string | null"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Share link owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Share link does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "DELETE",
+                    "path": "/{share_id}",
+                    "summary": "Delete a document share link",
+                    "description": "Permanently deletes a document share link from the database. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "share_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Deleted successfully",
+                            "body": {
+                                "message": "Document share deleted successfully"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Share link owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Share link does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "PATCH",
+                    "path": "/{share_id}/revoke",
+                    "summary": "Revoke a document share link",
+                    "description": "Deactivates a document share link immediately, rendering it invalid for public access. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "share_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Revoked successfully",
+                            "body": {
+                                "id": "uuid",
+                                "is_active": "boolean"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Share link owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Share link does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "PATCH",
+                    "path": "/{share_id}/activate",
+                    "summary": "Reactivate a document share link",
+                    "description": "Reactivates a previously revoked document share link. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "share_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Reactivated successfully",
+                            "body": {
+                                "id": "uuid",
+                                "is_active": "boolean"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Share link owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Share link does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/document/{document_id}",
+                    "summary": "List document shares associated with a document",
+                    "description": "Retrieve all generated share links for a specific document. Enforces document ownership validation.",
+                    "path_parameters": {
+                        "document_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": [
+                                {
+                                    "id": "uuid",
+                                    "document_id": "uuid",
+                                    "access_token": "string",
+                                    "share_link": "string",
+                                    "is_active": "boolean"
+                                }
+                            ]
+                        },
+                        "403": {
+                            "description": "Forbidden (Document owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Document does not exist)"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Public Shared Access",
+            "base_path": "/public",
+            "endpoints": [
+                {
+                    "method": "GET",
+                    "path": "/share/{token}",
+                    "summary": "Get shared document details public",
+                    "description": "Access shared document details publicly using the secure access token. Does not require authentication. Returns allowed document metadata along with a secure 1-hour download URL. Updates last accessed timestamp.",
+                    "path_parameters": {
+                        "token": {
+                            "type": "string",
+                            "required": true,
+                            "description": "The secure access token of the share link"
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "title": "string",
+                                "document_type": "string",
+                                "created_at": "string",
+                                "expiry_date": "string | null",
+                                "download_url": "string"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Link is inactive or expired)"
+                        },
+                        "404": {
+                            "description": "Not Found (Invalid token, or shared document no longer exists)"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "base_path": "/api/notifications",
+            "endpoints": [
+                {
+                    "method": "GET",
+                    "path": "/",
+                    "summary": "List notifications",
+                    "description": "Retrieve a paginated list of notifications for the authenticated user, optionally filtered by read/unread status or type, and sorted.",
+                    "query_parameters": {
+                        "page": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "default": 20,
+                            "minimum": 1,
+                            "maximum": 100
+                        },
+                        "is_read": {
+                            "type": "boolean",
+                            "required": false
+                        },
+                        "type": {
+                            "type": "string",
+                            "required": false,
+                            "enum": [
+                                "INFO",
+                                "SUCCESS",
+                                "WARNING",
+                                "ERROR"
+                            ]
+                        },
+                        "sorting": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "items": [
+                                    {
+                                        "id": "uuid",
+                                        "title": "string",
+                                        "message": "string",
+                                        "type": "string",
+                                        "is_read": "boolean",
+                                        "related_document_id": "uuid | null",
+                                        "related_contact_id": "uuid | null",
+                                        "related_share_id": "uuid | null",
+                                        "created_at": "datetime",
+                                        "updated_at": "datetime | null"
+                                    }
+                                ],
+                                "total": "integer",
+                                "page": "integer",
+                                "pages": "integer",
+                                "limit": "integer"
+                            }
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/unread-count",
+                    "summary": "Get unread count",
+                    "description": "Returns the count of unread notifications for the authenticated user.",
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "unread_count": "integer"
+                            }
+                        }
+                    }
+                },
+                {
+                    "method": "PATCH",
+                    "path": "/read-all",
+                    "summary": "Mark all notifications as read",
+                    "description": "Bulk updates all unread notifications of the user to read status.",
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "message": "All notifications marked as read"
+                            }
+                        }
+                    }
+                },
+                {
+                    "method": "GET",
+                    "path": "/{notification_id}",
+                    "summary": "Get notification details",
+                    "description": "Retrieve detailed metadata of a specific notification. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "notification_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "id": "uuid",
+                                "title": "string",
+                                "message": "string",
+                                "type": "string",
+                                "is_read": "boolean",
+                                "related_document_id": "uuid | null",
+                                "related_contact_id": "uuid | null",
+                                "related_share_id": "uuid | null",
+                                "created_at": "datetime",
+                                "updated_at": "datetime | null"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden (Owned by another user)"
+                        },
+                        "404": {
+                            "description": "Not Found (Notification does not exist)"
+                        }
+                    }
+                },
+                {
+                    "method": "PATCH",
+                    "path": "/{notification_id}/read",
+                    "summary": "Mark single notification as read",
+                    "description": "Updates a specific notification status to read. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "notification_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "id": "uuid",
+                                "is_read": "boolean"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden"
+                        },
+                        "404": {
+                            "description": "Not Found"
+                        }
+                    }
+                },
+                {
+                    "method": "PATCH",
+                    "path": "/{notification_id}/unread",
+                    "summary": "Mark single notification as unread",
+                    "description": "Updates a specific notification status to unread. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "notification_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "id": "uuid",
+                                "is_read": "boolean"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden"
+                        },
+                        "404": {
+                            "description": "Not Found"
+                        }
+                    }
+                },
+                {
+                    "method": "DELETE",
+                    "path": "/{notification_id}",
+                    "summary": "Delete single notification",
+                    "description": "Permanently deletes a specific notification. Enforces ownership authorization.",
+                    "path_parameters": {
+                        "notification_id": {
+                            "type": "uuid",
+                            "required": true
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "message": "Notification deleted successfully"
+                            }
+                        },
+                        "403": {
+                            "description": "Forbidden"
+                        },
+                        "404": {
+                            "description": "Not Found"
+                        }
+                    }
+                },
+                {
+                    "method": "DELETE",
+                    "path": "/",
+                    "summary": "Delete all notifications",
+                    "description": "Bulk deletes all notifications owned by the authenticated user.",
+                    "responses": {
+                        "200": {
+                            "description": "Success",
+                            "body": {
+                                "message": "All notifications deleted successfully"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

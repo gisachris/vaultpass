@@ -117,3 +117,366 @@ Run the test suite using Poetry:
 poetry run pytest
 ```
 All tests should pass successfully.
+
+---
+
+# Walkthrough: Audit Logging Module
+
+This section describes the complete audit logging system added on top of the existing backend.
+
+---
+
+## 1. Architecture Overview
+
+The audit module follows the same layered pattern as the rest of the codebase:
+
+```
+API Router (audit_logs.py)
+    └── AuditService (audit_service.py)
+            └── AuditLogRepository (repository/audit_log.py)
+                    └── AuditLog ORM Model (models/audit_log.py)   ← already existed
+```
+
+Audit entries are written **fire-and-forget**: if the database insert fails for any reason, the error is caught and logged as a warning — it never propagates up to the caller, so a logging hiccup cannot break a real user request.
+
+---
+
+## 2. New Files
+
+| File | Role |
+|---|---|
+| [`schemas/audit_log.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/schemas/audit_log.py) | Pydantic response models (`AuditLogResponse`, `AuditLogListResponse`) |
+| [`repository/audit_log.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/repository/audit_log.py) | DB queries: `create`, `get_by_id`, `get_user_logs`, `count_user_logs` |
+| [`services/audit_service.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/audit_service.py) | `log_action()` fire-and-forget helper + `get_user_logs()` for the API |
+| [`api/audit_logs.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/api/audit_logs.py) | `GET /api/audit-logs` router with pagination & filtering |
+| [`tests/test_audit_logs.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/tests/test_audit_logs.py) | 11 unit + integration tests (all passing) |
+
+---
+
+## 3. Modified Files
+
+| File | Change |
+|---|---|
+| [`main.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/main.py) | Imports and registers `audit_logs_router` at `/api/audit-logs` |
+| [`repository/__init__.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/repository/__init__.py) | Exports `AuditLogRepository` |
+| [`services/__init__.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/__init__.py) | Exports `AuditService` |
+| [`schemas/__init__.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/schemas/__init__.py) | Exports `AuditLogResponse`, `AuditLogListResponse` |
+| [`api/auth.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/api/auth.py) | Logs `REGISTER` and `LOGIN` events with IP address + user-agent |
+| [`services/document_service.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/document_service.py) | Logs `DOCUMENT_CREATED`, `DOCUMENT_UPDATED`, `DOCUMENT_DELETED`, `DOCUMENT_DOWNLOADED` |
+| [`services/trusted_contact.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/trusted_contact.py) | Logs `CONTACT_CREATED`, `CONTACT_UPDATED`, `CONTACT_DELETED` |
+| [`services/document_share.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/document_share.py) | Logs `DOCUMENT_SHARED`, `SHARE_REVOKED` |
+
+---
+
+## 4. API Endpoint
+
+### `GET /api/audit-logs`
+
+Returns a paginated list of audit log entries belonging to the authenticated user.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `page` | int | 1 | Page number (≥ 1) |
+| `limit` | int | 20 | Items per page (1–100) |
+| `action` | string | — | Filter by action (e.g. `LOGIN`, `DOCUMENT_CREATED`) |
+| `entity_type` | string | — | Filter by entity type (e.g. `DOCUMENT`, `USER`) |
+
+**Example response:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "action": "DOCUMENT_CREATED",
+      "entity_type": "DOCUMENT",
+      "entity_id": "uuid",
+      "description": "Document 'Passport' uploaded.",
+      "metadata_": null,
+      "ip_address": null,
+      "user_agent": null,
+      "created_at": "2026-06-09T10:00:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pages": 1,
+  "limit": 20
+}
+```
+
+---
+
+## 5. Tracked Actions
+
+All action constants live in [`core/constants.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/core/constants.py):
+
+| Action | Entity Type | Triggered By |
+|---|---|---|
+| `LOGIN` | `USER` | `POST /api/auth/login` |
+| `REGISTER` | `USER` | `POST /api/auth/register` |
+| `DOCUMENT_CREATED` | `DOCUMENT` | `POST /api/documents/upload` |
+| `DOCUMENT_UPDATED` | `DOCUMENT` | `PUT /api/documents/{id}` |
+| `DOCUMENT_DELETED` | `DOCUMENT` | `DELETE /api/documents/{id}` |
+| `DOCUMENT_DOWNLOADED` | `DOCUMENT` | `GET /api/documents/{id}/download` |
+| `CONTACT_CREATED` | `TRUSTED_CONTACT` | `POST /api/v1/trusted-contacts` |
+| `CONTACT_UPDATED` | `TRUSTED_CONTACT` | `PATCH /api/v1/trusted-contacts/{id}` |
+| `CONTACT_DELETED` | `TRUSTED_CONTACT` | `DELETE /api/v1/trusted-contacts/{id}` |
+| `DOCUMENT_SHARED` | `DOCUMENT_SHARE` | `POST /api/v1/shares` |
+| `SHARE_REVOKED` | `DOCUMENT_SHARE` | `PATCH /api/v1/shares/{id}/revoke` |
+
+---
+
+## 6. How to Run the Tests
+
+```bash
+poetry run pytest tests/test_audit_logs.py -v
+```
+
+All 11 tests should pass.
+
+---
+
+# Walkthrough: Settings Module
+
+This section describes the complete Settings Module added on top of the existing backend.
+
+---
+
+## 1. Architecture Overview
+
+The settings module follows the same layered pattern as all other modules:
+
+```
+API Router (api/settings_router.py)
+    └── SettingsService (services/settings_service.py)
+            └── SettingsRepository (repository/settings_repository.py)
+                    └── UserSettings ORM Model (models/settings.py)
+```
+
+User settings are automatically **seeded on registration** and **lazily created** if missing, so the module is fully backwards-compatible with existing users.
+
+---
+
+## 2. New Files
+
+| File | Role |
+|---|---|
+| [`models/settings.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/models/settings.py) | `UserSettings` SQLAlchemy model (16 preference columns) |
+| [`schemas/settings.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/schemas/settings.py) | Pydantic request/response schemas with field-level validation |
+| [`repository/settings_repository.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/repository/settings_repository.py) | `get_by_user_id`, `create`, `save` |
+| [`services/settings_service.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/settings_service.py) | All settings business logic — profile, security, notifications, privacy, reminders, account info, export, deactivation |
+| [`api/settings_router.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/api/settings_router.py) | 11 endpoints under `/api/settings` |
+| [`tests/test_settings.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/tests/test_settings.py) | 18 unit tests covering all endpoints and validation rules |
+| [`alembic/versions/e5c1fa95eb0d_create_settings_table.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/alembic/versions/e5c1fa95eb0d_create_settings_table.py) | DB migration creating `user_settings` table and adding `is_active` + `last_login` to `users` |
+
+---
+
+## 3. Modified Files
+
+| File | Change |
+|---|---|
+| [`models/user.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/models/user.py) | Added `is_active` (Boolean), `last_login` (DateTime), and `settings` relationship |
+| [`services/auth_service.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/auth_service.py) | `register_user` auto-seeds default `UserSettings`; `authenticate_user` checks `is_active` and stamps `last_login` |
+| [`core/dependencies.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/core/dependencies.py) | `get_current_user` raises 401 if `user.is_active` is `False` |
+| [`core/constants.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/core/constants.py) | Added `SECURITY_SETTINGS_UPDATED`, `NOTIFICATION_SETTINGS_UPDATED`, `PRIVACY_SETTINGS_UPDATED`, `REMINDER_SETTINGS_UPDATED`, `ACCOUNT_SETTINGS_EXPORTED`, `ACCOUNT_DEACTIVATED` |
+| [`services/notification.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/notification.py) | `create_notification` checks user preference settings before saving; suppresses notifications based on user category toggles |
+| [`services/notification_scheduler.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/notification_scheduler.py) | Reads `document_expiry_notifications` flag and `document_reminder_days` per user from settings |
+| [`main.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/main.py) | Imports and registers `settings_router` at `/api/settings` |
+| [`tests/test_notifications.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/tests/test_notifications.py) | Updated `test_scheduler_checks_expiring_resources` to patch `SettingsRepository.get_by_user_id` |
+
+---
+
+## 4. API Endpoints
+
+All endpoints are under `/api/settings` and require JWT authentication.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/settings/profile` | Retrieve profile info (name, email, created_at, last_login) |
+| `PUT` | `/settings/profile` | Update display name (min 3 chars) |
+| `GET` | `/settings/security` | Retrieve security preferences |
+| `PUT` | `/settings/security` | Update 2FA, auto-logout, session timeout (5–1440 min) |
+| `POST` | `/settings/change-password` | Change password with current password verification |
+| `GET` | `/settings/notifications` | Retrieve notification category toggles |
+| `PUT` | `/settings/notifications` | Update notification toggles |
+| `GET` | `/settings/privacy` | Retrieve privacy visibility settings |
+| `PUT` | `/settings/privacy` | Update profile/contact visibility |
+| `GET` | `/settings/reminders` | Retrieve reminder days (1–365) |
+| `PUT` | `/settings/reminders` | Update reminder threshold |
+| `GET` | `/settings/account` | Account info (counts of docs, contacts, shares) |
+| `GET` | `/settings/export` | Export all settings as a flat JSON dict |
+| `POST` | `/settings/deactivate` | Soft-deactivate account (password required) |
+
+---
+
+## 5. Key Design Decisions
+
+- **Default settings seeded at registration**: `register_user` auto-creates a `UserSettings` row with sensible defaults, so every user always has settings.
+- **Lazy creation fallback**: `get_or_create_settings()` will create defaults on demand for any existing user who doesn't yet have a settings row.
+- **Notification filtering**: `NotificationService.create_notification` checks the user's settings before writing — document expiry, shared access, trusted contact, and security notifications can each be independently suppressed.
+- **Scheduler respects `document_reminder_days`**: The background scheduler uses each user's configured reminder threshold (default 30) as the primary milestone.
+- **Soft deactivation**: `POST /settings/deactivate` sets `is_active=False`. Deactivated users are blocked at both login (`authenticate_user`) and token validation (`get_current_user`).
+- **Audit integration**: All writes (profile, security, notifications, privacy, reminders, change-password, export, deactivate) fire `AuditService.log_action` in a fire-and-forget pattern.
+
+---
+
+## 6. Test Results
+
+```bash
+poetry run pytest -v
+# 86 passed, 185 warnings in ~4s
+```
+
+All 86 tests (18 settings + 68 previously existing) pass cleanly.
+
+---
+
+# Walkthrough: Dashboard Module
+
+This section describes the complete Dashboard Module — the final major backend module — added on top of the existing VaultPass backend.
+
+---
+
+## 1. Architecture Overview
+
+The dashboard is a **pure aggregation layer**. It owns no data, creates no DB records, and requires no migration.
+
+```
+API Router (api/dashboard_router.py)
+    └── DashboardService (services/dashboard_service.py)
+            ├── AuditLogRepository    ← recent_activity
+            ├── NotificationRepository ← recent_notifications + unread count
+            ├── SettingsRepository    ← reminder_days
+            └── Direct model queries  ← document counts, categories, storage
+```
+
+---
+
+## 2. New Files
+
+| File | Role |
+|---|---|
+| [`schemas/dashboard.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/schemas/dashboard.py) | 8 Pydantic response schemas composing `DashboardResponse` |
+| [`services/dashboard_service.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/services/dashboard_service.py) | `DashboardService.get_dashboard()` with two-phase async concurrency |
+| [`api/dashboard_router.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/api/dashboard_router.py) | Single `GET /api/dashboard/` endpoint |
+| [`tests/test_dashboard.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/tests/test_dashboard.py) | 11 unit tests |
+
+---
+
+## 3. Modified Files
+
+| File | Change |
+|---|---|
+| [`main.py`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/src/vaultpass_backend/main.py) | Imports and registers `dashboard_router` at `/api/dashboard` |
+| [`api.json`](file:///e:/gdev/projects/vault%20pass/vaultpass/vaultpass_backend/api.json) | Added Dashboard module spec with full response body shape and frontend notes |
+
+---
+
+## 4. API Endpoint
+
+### `GET /api/dashboard/`
+
+Returns the complete dashboard payload in a single request.
+
+**Response shape:**
+
+```json
+{
+  "summary": {
+    "total_documents": 10,
+    "trusted_contacts": 3,
+    "active_shares": 2,
+    "unread_notifications": 4
+  },
+  "document_health": {
+    "valid_documents": 7,
+    "expiring_soon": 2,
+    "expired_documents": 1
+  },
+  "categories": [
+    { "category": "PASSPORT", "count": 5 },
+    { "category": "NATIONAL_ID", "count": 3 }
+  ],
+  "expiring_documents": [
+    {
+      "document_id": "uuid",
+      "document_name": "My Passport",
+      "category": "PASSPORT",
+      "expiry_date": "2026-06-24T00:00:00Z",
+      "days_remaining": 15
+    }
+  ],
+  "recent_activity": [
+    {
+      "action": "DOCUMENT_CREATED",
+      "description": "Document 'Passport' uploaded.",
+      "created_at": "2026-06-09T10:00:00Z"
+    }
+  ],
+  "recent_notifications": [
+    {
+      "id": "uuid",
+      "title": "Document Uploaded",
+      "message": "Passport uploaded successfully.",
+      "is_read": false,
+      "created_at": "2026-06-09T10:00:00Z"
+    }
+  ],
+  "account_overview": {
+    "account_created": "2026-03-10T08:00:00Z",
+    "last_login": "2026-06-09T08:00:00Z",
+    "storage_used_mb": 12.5
+  }
+}
+```
+
+---
+
+## 5. Concurrency Strategy
+
+`DashboardService` uses **two-phase `asyncio.gather`** to minimise latency:
+
+**Phase 1 — fully independent (run concurrently):**
+- Summary counts (documents, contacts, active shares, unread notifications)
+- `reminder_days` from `SettingsRepository`
+- Recent activity (20 records from `AuditLogRepository`)
+- Recent notifications (10 records from `NotificationRepository`)
+
+**Phase 2 — depend on `reminder_days` (run concurrently with each other):**
+- Document health (`valid`, `expiring_soon`, `expired` counts)
+- Category breakdown (`GROUP BY document_type`)
+- Expiring documents list (top 10, soonest first)
+- Storage used MB (`SUM(file_size)` → converted to MB)
+
+---
+
+## 6. Key Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| Single endpoint `GET /api/dashboard/` | Frontend loads the entire dashboard in one HTTP round-trip |
+| No repository, no model, no migration | Dashboard is pure aggregation — data lives in existing tables |
+| Two-phase gather | `reminder_days` must be known before expiry queries; all other queries are concurrent |
+| `days_remaining` computed in Python | `(expiry_date - now()).days` — avoids a DB function and keeps queries simple |
+| `storage_used_mb` rounded to 1 dp | Sufficient precision for a UI display card |
+| No audit log on view | Read-only endpoint — logging would create meaningless noise in the audit trail |
+| `expiring_soon` uses `document_reminder_days` | Per-user configurable; defaults to 30 if no settings row exists |
+
+---
+
+## 7. Test Results
+
+```bash
+poetry run pytest tests/test_dashboard.py -v
+# 11 passed
+
+poetry run pytest -v
+# 97 passed, 202 warnings in ~25s
+```
+
+All 97 tests (11 dashboard + 86 previously existing) pass cleanly.
+
+

@@ -1,4 +1,4 @@
-import apiSpec from '../../../api.json';
+import apiSpec from './api.json';
 
 type ApiEndpoint = {
   method: string;

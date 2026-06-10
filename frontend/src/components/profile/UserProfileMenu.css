@@ -1,0 +1,205 @@
+/* ─── Wrapper ─────────────────────────────────────────────────────────────── */
+.upm-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ─── Avatar Button ───────────────────────────────────────────────────────── */
+.upm-avatar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: linear-gradient(135deg, #2c3e50, #3d5a80);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.upm-avatar-btn:hover {
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.15);
+  transform: scale(1.05);
+}
+
+.upm-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upm-avatar-initials {
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.upm-avatar-icon {
+  color: #ffffff;
+  font-size: 1.3rem;
+}
+
+/* ─── Dropdown ────────────────────────────────────────────────────────────── */
+.upm-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 268px;
+  background: #ffffff;
+  border: 1px solid #e8edf2;
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.06);
+  z-index: 9999;
+  overflow: hidden;
+  animation: upm-fade-in 0.15s ease;
+}
+
+.upm-dropdown--sidebar {
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
+}
+
+@keyframes upm-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Profile Card ────────────────────────────────────────────────────────── */
+.upm-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.upm-profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2c3e50, #3d5a80);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.25);
+}
+
+.upm-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upm-profile-initials {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.upm-profile-icon {
+  color: #ffffff;
+  font-size: 1.5rem;
+}
+
+.upm-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.upm-profile-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upm-profile-email {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upm-profile-role {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #2c3e50;
+  background: #e8f0fe;
+  border-radius: 6px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Divider ─────────────────────────────────────────────────────────────── */
+.upm-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0;
+}
+
+/* ─── Menu Items ──────────────────────────────────────────────────────────── */
+.upm-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.upm-menu-item:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.upm-menu-item .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+.upm-menu-item:hover .material-symbols-outlined {
+  color: #2c3e50;
+}
+
+.upm-menu-item--danger {
+  color: #dc2626;
+}
+
+.upm-menu-item--danger:hover {
+  background: #fff5f5;
+  color: #b91c1c;
+}
+
+.upm-menu-item--danger .material-symbols-outlined {
+  color: #dc2626;
+}
+
+.upm-menu-item--danger:hover .material-symbols-outlined {
+  color: #b91c1c;
+}

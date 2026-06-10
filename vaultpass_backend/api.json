@@ -1,96 +1,179 @@
 {
-  "module": "Trusted Contacts",
-  "base_path": "/api/v1/trusted-contacts",
-  "endpoints": [
+  "modules": [
     {
-      "method": "POST",
-      "path": "/",
-      "summary": "Create a new trusted contact",
-      "description": "Allows an authenticated user to add a new contact to their private trusted contacts book. Enforces duplicate email checks per user.",
-      "request_body": {
-        "full_name": {
-          "type": "string",
-          "required": true,
-          "min_length": 2,
-          "max_length": 255,
-          "description": "Full name of the contact"
-        },
-        "email": {
-          "type": "string",
-          "required": true,
-          "format": "email",
-          "description": "Unique email address for this owner"
-        },
-        "phone_number": {
-          "type": "string",
-          "required": false,
-          "max_length": 50,
-          "description": "Optional phone number"
-        },
-        "relationship": {
-          "type": "string",
-          "required": true,
-          "max_length": 100,
-          "description": "Relationship with owner (e.g., Parent, Spouse, Friend, Lawyer)"
-        },
-        "notes": {
-          "type": "string",
-          "required": false,
-          "max_length": 1000,
-          "description": "Optional additional notes"
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Created successfully",
-          "body": {
-            "message": "Trusted contact created successfully",
-            "data": {
-              "id": "uuid",
-              "full_name": "string",
-              "email": "string",
-              "phone_number": "string | null",
-              "relationship": "string",
-              "notes": "string | null",
-              "created_at": "datetime",
-              "updated_at": "datetime | null"
+      "name": "Trusted Contacts",
+      "base_path": "/api/v1/trusted-contacts",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/",
+          "summary": "Create a new trusted contact",
+          "description": "Allows an authenticated user to add a new contact to their private trusted contacts book. Enforces duplicate email checks per user.",
+          "request_body": {
+            "full_name": {
+              "type": "string",
+              "required": true,
+              "min_length": 2,
+              "max_length": 255,
+              "description": "Full name of the contact"
+            },
+            "email": {
+              "type": "string",
+              "required": true,
+              "format": "email",
+              "description": "Unique email address for this owner"
+            },
+            "phone_number": {
+              "type": "string",
+              "required": false,
+              "max_length": 50,
+              "description": "Optional phone number"
+            },
+            "relationship": {
+              "type": "string",
+              "required": true,
+              "max_length": 100,
+              "description": "Relationship with owner (e.g., Parent, Spouse, Friend, Lawyer)"
+            },
+            "notes": {
+              "type": "string",
+              "required": false,
+              "max_length": 1000,
+              "description": "Optional additional notes"
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created successfully",
+              "body": {
+                "message": "Trusted contact created successfully",
+                "data": {
+                  "id": "uuid",
+                  "full_name": "string",
+                  "email": "string",
+                  "phone_number": "string | null",
+                  "relationship": "string",
+                  "notes": "string | null",
+                  "created_at": "datetime",
+                  "updated_at": "datetime | null"
+                }
+              }
+            },
+            "409": {
+              "description": "Conflict (Duplicate email for this owner)"
+            },
+            "422": {
+              "description": "Validation Error (Invalid input format)"
             }
           }
         },
-        "409": {
-          "description": "Conflict (Duplicate email for this owner)"
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "List trusted contacts",
+          "description": "Retrieve a paginated list of trusted contacts owned by the authenticated user.",
+          "query_parameters": {
+            "page": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "description": "Page number to retrieve"
+            },
+            "page_size": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Number of items per page"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "items": [
+                  {
+                    "id": "uuid",
+                    "full_name": "string",
+                    "email": "string",
+                    "phone_number": "string | null",
+                    "relationship": "string",
+                    "notes": "string | null",
+                    "created_at": "datetime",
+                    "updated_at": "datetime | null"
+                  }
+                ],
+                "total": "integer",
+                "page": "integer",
+                "page_size": "integer"
+              }
+            }
+          }
         },
-        "422": {
-          "description": "Validation Error (Invalid input format)"
-        }
-      }
-    },
-    {
-      "method": "GET",
-      "path": "/",
-      "summary": "List trusted contacts",
-      "description": "Retrieve a paginated list of trusted contacts owned by the authenticated user.",
-      "query_parameters": {
-        "page": {
-          "type": "integer",
-          "default": 1,
-          "minimum": 1,
-          "description": "Page number to retrieve"
+        {
+          "method": "GET",
+          "path": "/search",
+          "summary": "Search trusted contacts",
+          "description": "Search user's trusted contacts matching full_name, email, or relationship (case-insensitive and paginated).",
+          "query_parameters": {
+            "q": {
+              "type": "string",
+              "required": true,
+              "description": "Search query string"
+            },
+            "page": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "description": "Page number"
+            },
+            "page_size": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Items per page"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "items": [
+                  {
+                    "id": "uuid",
+                    "full_name": "string",
+                    "email": "string",
+                    "phone_number": "string | null",
+                    "relationship": "string",
+                    "notes": "string | null",
+                    "created_at": "datetime",
+                    "updated_at": "datetime | null"
+                  }
+                ],
+                "total": "integer",
+                "page": "integer",
+                "page_size": "integer"
+              }
+            }
+          }
         },
-        "page_size": {
-          "type": "integer",
-          "default": 10,
-          "minimum": 1,
-          "maximum": 100,
-          "description": "Number of items per page"
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Success",
-          "body": {
-            "items": [
-              {
+        {
+          "method": "GET",
+          "path": "/{contact_id}",
+          "summary": "Get a trusted contact",
+          "description": "Retrieve detailed information of a specific trusted contact. Enforces ownership authorization.",
+          "path_parameters": {
+            "contact_id": {
+              "type": "uuid",
+              "required": true,
+              "description": "ID of the trusted contact"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
                 "id": "uuid",
                 "full_name": "string",
                 "email": "string",
@@ -100,45 +183,59 @@
                 "created_at": "datetime",
                 "updated_at": "datetime | null"
               }
-            ],
-            "total": "integer",
-            "page": "integer",
-            "page_size": "integer"
+            },
+            "403": {
+              "description": "Forbidden (Contact owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Contact does not exist)"
+            }
           }
-        }
-      }
-    },
-    {
-      "method": "GET",
-      "path": "/search",
-      "summary": "Search trusted contacts",
-      "description": "Search user's trusted contacts matching full_name, email, or relationship (case-insensitive and paginated).",
-      "query_parameters": {
-        "q": {
-          "type": "string",
-          "required": true,
-          "description": "Search query string"
         },
-        "page": {
-          "type": "integer",
-          "default": 1,
-          "minimum": 1,
-          "description": "Page number"
-        },
-        "page_size": {
-          "type": "integer",
-          "default": 10,
-          "minimum": 1,
-          "maximum": 100,
-          "description": "Items per page"
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Success",
-          "body": {
-            "items": [
-              {
+        {
+          "method": "PATCH",
+          "path": "/{contact_id}",
+          "summary": "Update a trusted contact",
+          "description": "Partially update details of an existing trusted contact. Enforces ownership authorization and duplicate email checks.",
+          "path_parameters": {
+            "contact_id": {
+              "type": "uuid",
+              "required": true,
+              "description": "ID of the trusted contact"
+            }
+          },
+          "request_body": {
+            "full_name": {
+              "type": "string",
+              "required": false,
+              "min_length": 2,
+              "max_length": 255
+            },
+            "email": {
+              "type": "string",
+              "required": false,
+              "format": "email"
+            },
+            "phone_number": {
+              "type": "string",
+              "required": false,
+              "max_length": 50
+            },
+            "relationship": {
+              "type": "string",
+              "required": false,
+              "max_length": 100
+            },
+            "notes": {
+              "type": "string",
+              "required": false,
+              "max_length": 1000
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
                 "id": "uuid",
                 "full_name": "string",
                 "email": "string",
@@ -146,141 +243,1172 @@
                 "relationship": "string",
                 "notes": "string | null",
                 "created_at": "datetime",
+                "updated_at": "datetime"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Contact owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Contact does not exist)"
+            },
+            "409": {
+              "description": "Conflict (Duplicate email for this owner)"
+            }
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/{contact_id}",
+          "summary": "Delete a trusted contact",
+          "description": "Permanently deletes a trusted contact from the database. Enforces ownership authorization.",
+          "path_parameters": {
+            "contact_id": {
+              "type": "uuid",
+              "required": true,
+              "description": "ID of the trusted contact"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Deleted successfully",
+              "body": {
+                "message": "Trusted contact deleted successfully"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Contact owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Contact does not exist)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shared Access",
+      "base_path": "/api/v1/shares",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/",
+          "summary": "Create a new document share link",
+          "description": "Generates a secure access link for sharing a specific document with a trusted contact. Enforces document and contact ownership validation.",
+          "request_body": {
+            "document_id": {
+              "type": "uuid",
+              "required": true,
+              "description": "ID of the document to share"
+            },
+            "contact_id": {
+              "type": "uuid",
+              "required": true,
+              "description": "ID of the trusted contact to share with"
+            },
+            "expires_at": {
+              "type": "string",
+              "required": false,
+              "format": "date-time",
+              "description": "Optional expiration date and time for the link"
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created successfully",
+              "body": {
+                "id": "uuid",
+                "document_id": "uuid",
+                "contact_id": "uuid",
+                "owner_id": "uuid",
+                "access_token": "string",
+                "share_link": "string",
+                "is_active": "boolean",
+                "expires_at": "string | null",
+                "last_accessed_at": "string | null",
+                "created_at": "string",
+                "updated_at": "string | null"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Not authorized to access the document or trusted contact)"
+            },
+            "404": {
+              "description": "Not Found (Document or contact not found)"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "List user's document shares",
+          "description": "Retrieve all document sharing links created by the currently authenticated user.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": [
+                {
+                  "id": "uuid",
+                  "document_id": "uuid",
+                  "contact_id": "uuid",
+                  "owner_id": "uuid",
+                  "access_token": "string",
+                  "share_link": "string",
+                  "is_active": "boolean",
+                  "expires_at": "string | null",
+                  "last_accessed_at": "string | null",
+                  "created_at": "string",
+                  "updated_at": "string | null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/{share_id}",
+          "summary": "Get document share details",
+          "description": "Retrieve detailed metadata of a specific share link. Enforces ownership authorization.",
+          "path_parameters": {
+            "share_id": {
+              "type": "uuid",
+              "required": true,
+              "description": "ID of the document share link"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "id": "uuid",
+                "document_id": "uuid",
+                "contact_id": "uuid",
+                "owner_id": "uuid",
+                "access_token": "string",
+                "share_link": "string",
+                "is_active": "boolean",
+                "expires_at": "string | null",
+                "last_accessed_at": "string | null",
+                "created_at": "string",
+                "updated_at": "string | null"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Share link owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Share link does not exist)"
+            }
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/{share_id}",
+          "summary": "Update document share configuration",
+          "description": "Modify parameters of an existing document share link, such as expiration or active status. Enforces ownership authorization.",
+          "path_parameters": {
+            "share_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "request_body": {
+            "expires_at": {
+              "type": "string",
+              "required": false,
+              "format": "date-time"
+            },
+            "is_active": {
+              "type": "boolean",
+              "required": false
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
+                "id": "uuid",
+                "is_active": "boolean",
+                "expires_at": "string | null"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Share link owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Share link does not exist)"
+            }
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/{share_id}",
+          "summary": "Delete a document share link",
+          "description": "Permanently deletes a document share link from the database. Enforces ownership authorization.",
+          "path_parameters": {
+            "share_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Deleted successfully",
+              "body": {
+                "message": "Document share deleted successfully"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Share link owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Share link does not exist)"
+            }
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/{share_id}/revoke",
+          "summary": "Revoke a document share link",
+          "description": "Deactivates a document share link immediately, rendering it invalid for public access. Enforces ownership authorization.",
+          "path_parameters": {
+            "share_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Revoked successfully",
+              "body": {
+                "id": "uuid",
+                "is_active": "boolean"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Share link owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Share link does not exist)"
+            }
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/{share_id}/activate",
+          "summary": "Reactivate a document share link",
+          "description": "Reactivates a previously revoked document share link. Enforces ownership authorization.",
+          "path_parameters": {
+            "share_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Reactivated successfully",
+              "body": {
+                "id": "uuid",
+                "is_active": "boolean"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Share link owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Share link does not exist)"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/document/{document_id}",
+          "summary": "List document shares associated with a document",
+          "description": "Retrieve all generated share links for a specific document. Enforces document ownership validation.",
+          "path_parameters": {
+            "document_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": [
+                {
+                  "id": "uuid",
+                  "document_id": "uuid",
+                  "access_token": "string",
+                  "share_link": "string",
+                  "is_active": "boolean"
+                }
+              ]
+            },
+            "403": {
+              "description": "Forbidden (Document owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Document does not exist)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Shared Access",
+      "base_path": "/public",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/share/{token}",
+          "summary": "Get shared document details public",
+          "description": "Access shared document details publicly using the secure access token. Does not require authentication. Returns allowed document metadata along with a secure 1-hour download URL. Updates last accessed timestamp.",
+          "path_parameters": {
+            "token": {
+              "type": "string",
+              "required": true,
+              "description": "The secure access token of the share link"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "title": "string",
+                "document_type": "string",
+                "created_at": "string",
+                "expiry_date": "string | null",
+                "download_url": "string"
+              }
+            },
+            "403": {
+              "description": "Forbidden (Link is inactive or expired)"
+            },
+            "404": {
+              "description": "Not Found (Invalid token, or shared document no longer exists)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "base_path": "/api/notifications",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "List notifications",
+          "description": "Retrieve a paginated list of notifications for the authenticated user, optionally filtered by read/unread status or type, and sorted.",
+          "query_parameters": {
+            "page": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "limit": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "is_read": {
+              "type": "boolean",
+              "required": false
+            },
+            "type": {
+              "type": "string",
+              "required": false,
+              "enum": ["INFO", "SUCCESS", "WARNING", "ERROR"]
+            },
+            "sorting": {
+              "type": "string",
+              "default": "desc",
+              "enum": ["asc", "desc"]
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "items": [
+                  {
+                    "id": "uuid",
+                    "title": "string",
+                    "message": "string",
+                    "type": "string",
+                    "is_read": "boolean",
+                    "related_document_id": "uuid | null",
+                    "related_contact_id": "uuid | null",
+                    "related_share_id": "uuid | null",
+                    "created_at": "datetime",
+                    "updated_at": "datetime | null"
+                  }
+                ],
+                "total": "integer",
+                "page": "integer",
+                "pages": "integer",
+                "limit": "integer"
+              }
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/unread-count",
+          "summary": "Get unread count",
+          "description": "Returns the count of unread notifications for the authenticated user.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "unread_count": "integer"
+              }
+            }
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/read-all",
+          "summary": "Mark all notifications as read",
+          "description": "Bulk updates all unread notifications of the user to read status.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "message": "All notifications marked as read"
+              }
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/{notification_id}",
+          "summary": "Get notification details",
+          "description": "Retrieve detailed metadata of a specific notification. Enforces ownership authorization.",
+          "path_parameters": {
+            "notification_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "id": "uuid",
+                "title": "string",
+                "message": "string",
+                "type": "string",
+                "is_read": "boolean",
+                "related_document_id": "uuid | null",
+                "related_contact_id": "uuid | null",
+                "related_share_id": "uuid | null",
+                "created_at": "datetime",
                 "updated_at": "datetime | null"
               }
-            ],
-            "total": "integer",
-            "page": "integer",
-            "page_size": "integer"
+            },
+            "403": {
+              "description": "Forbidden (Owned by another user)"
+            },
+            "404": {
+              "description": "Not Found (Notification does not exist)"
+            }
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/{notification_id}/read",
+          "summary": "Mark single notification as read",
+          "description": "Updates a specific notification status to read. Enforces ownership authorization.",
+          "path_parameters": {
+            "notification_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "id": "uuid",
+                "is_read": "boolean"
+              }
+            },
+            "403": {
+              "description": "Forbidden"
+            },
+            "404": {
+              "description": "Not Found"
+            }
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/{notification_id}/unread",
+          "summary": "Mark single notification as unread",
+          "description": "Updates a specific notification status to unread. Enforces ownership authorization.",
+          "path_parameters": {
+            "notification_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "id": "uuid",
+                "is_read": "boolean"
+              }
+            },
+            "403": {
+              "description": "Forbidden"
+            },
+            "404": {
+              "description": "Not Found"
+            }
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/{notification_id}",
+          "summary": "Delete single notification",
+          "description": "Permanently deletes a specific notification. Enforces ownership authorization.",
+          "path_parameters": {
+            "notification_id": {
+              "type": "uuid",
+              "required": true
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "message": "Notification deleted successfully"
+              }
+            },
+            "403": {
+              "description": "Forbidden"
+            },
+            "404": {
+              "description": "Not Found"
+            }
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/",
+          "summary": "Delete all notifications",
+          "description": "Bulk deletes all notifications owned by the authenticated user.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "message": "All notifications deleted successfully"
+              }
+            }
           }
         }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "base_path": "/api/audit-logs",
+      "description": "Read-only access to the authenticated user's activity audit trail. All write operations across the platform (login, document upload, share, contact management, settings changes, etc.) automatically generate an audit log entry.",
+      "authentication": "Bearer JWT required for all endpoints",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "List audit log entries",
+          "description": "Retrieve a paginated list of audit log entries belonging to the currently authenticated user. Supports optional filtering by action type and entity type. Results are always ordered newest-first.",
+          "query_parameters": {
+            "page": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "description": "Page number to retrieve"
+            },
+            "limit": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Number of items per page"
+            },
+            "action": {
+              "type": "string",
+              "required": false,
+              "description": "Filter by action type (case-insensitive). Examples: LOGIN, REGISTER, DOCUMENT_CREATED, DOCUMENT_UPDATED, DOCUMENT_DELETED, DOCUMENT_DOWNLOADED, CONTACT_CREATED, CONTACT_UPDATED, CONTACT_DELETED, DOCUMENT_SHARED, SHARE_REVOKED, PROFILE_UPDATED, PASSWORD_CHANGED, SECURITY_SETTINGS_UPDATED, NOTIFICATION_SETTINGS_UPDATED, PRIVACY_SETTINGS_UPDATED, REMINDER_SETTINGS_UPDATED, ACCOUNT_SETTINGS_EXPORTED, ACCOUNT_DEACTIVATED"
+            },
+            "entity_type": {
+              "type": "string",
+              "required": false,
+              "description": "Filter by entity type (case-insensitive). Examples: USER, DOCUMENT, TRUSTED_CONTACT, DOCUMENT_SHARE, USER_SETTINGS"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "items": [
+                  {
+                    "id": "uuid",
+                    "user_id": "uuid",
+                    "action": "string",
+                    "entity_type": "string",
+                    "entity_id": "uuid | null",
+                    "description": "string",
+                    "metadata_": "object | null",
+                    "ip_address": "string | null",
+                    "user_agent": "string | null",
+                    "created_at": "datetime"
+                  }
+                ],
+                "total": "integer",
+                "page": "integer",
+                "pages": "integer",
+                "limit": "integer"
+              }
+            },
+            "401": {
+              "description": "Unauthorized (Missing or invalid token)"
+            }
+          }
+        }
+      ],
+      "action_reference": {
+        "auth": ["LOGIN", "REGISTER", "LOGOUT", "PASSWORD_RESET"],
+        "documents": ["DOCUMENT_CREATED", "DOCUMENT_UPDATED", "DOCUMENT_DELETED", "DOCUMENT_VIEWED", "DOCUMENT_DOWNLOADED"],
+        "contacts": ["CONTACT_CREATED", "CONTACT_UPDATED", "CONTACT_DELETED"],
+        "sharing": ["DOCUMENT_SHARED", "SHARE_ACCEPTED", "SHARE_DECLINED", "SHARE_REVOKED"],
+        "notifications": ["NOTIFICATION_READ", "NOTIFICATION_MARKED_ALL_READ"],
+        "settings": ["PROFILE_UPDATED", "PASSWORD_CHANGED", "SETTINGS_UPDATED", "SECURITY_SETTINGS_UPDATED", "NOTIFICATION_SETTINGS_UPDATED", "PRIVACY_SETTINGS_UPDATED", "REMINDER_SETTINGS_UPDATED", "ACCOUNT_SETTINGS_EXPORTED", "ACCOUNT_DEACTIVATED"]
       }
     },
     {
-      "method": "GET",
-      "path": "/{contact_id}",
-      "summary": "Get a trusted contact",
-      "description": "Retrieve detailed information of a specific trusted contact. Enforces ownership authorization.",
-      "path_parameters": {
-        "contact_id": {
-          "type": "uuid",
-          "required": true,
-          "description": "ID of the trusted contact"
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Success",
-          "body": {
-            "id": "uuid",
-            "full_name": "string",
-            "email": "string",
-            "phone_number": "string | null",
-            "relationship": "string",
-            "notes": "string | null",
-            "created_at": "datetime",
-            "updated_at": "datetime | null"
+      "name": "Settings",
+      "base_path": "/api/settings",
+      "description": "User settings management — profile, security, notifications, privacy, reminders, account info, full export, and account deactivation. All endpoints require JWT authentication.",
+      "authentication": "Bearer JWT required for all endpoints",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/profile",
+          "summary": "Get profile settings",
+          "description": "Retrieve the authenticated user's profile information including name, email, account creation date, and last login timestamp.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "full_name": "string",
+                "email": "string",
+                "created_at": "datetime",
+                "last_login": "datetime | null"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
           }
         },
-        "403": {
-          "description": "Forbidden (Contact owned by another user)"
+        {
+          "method": "PUT",
+          "path": "/profile",
+          "summary": "Update profile settings",
+          "description": "Update the user's display name. Fires a PROFILE_UPDATED audit log and a Profile Updated notification.",
+          "request_body": {
+            "full_name": {
+              "type": "string",
+              "required": true,
+              "min_length": 3,
+              "max_length": 255,
+              "description": "New full name for the user"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
+                "full_name": "string",
+                "email": "string",
+                "created_at": "datetime",
+                "last_login": "datetime | null"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "422": {
+              "description": "Validation Error (name too short)"
+            }
+          }
         },
-        "404": {
-          "description": "Not Found (Contact does not exist)"
+        {
+          "method": "GET",
+          "path": "/security",
+          "summary": "Get security settings",
+          "description": "Retrieve the user's security preferences: two-factor authentication flag, auto-logout toggle, and session timeout duration.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "two_factor_enabled": "boolean",
+                "auto_logout_enabled": "boolean",
+                "session_timeout_minutes": "integer"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/security",
+          "summary": "Update security settings",
+          "description": "Update security preferences. Fires a SECURITY_SETTINGS_UPDATED audit log and a Security Settings Updated notification.",
+          "request_body": {
+            "two_factor_enabled": {
+              "type": "boolean",
+              "required": true
+            },
+            "auto_logout_enabled": {
+              "type": "boolean",
+              "required": true
+            },
+            "session_timeout_minutes": {
+              "type": "integer",
+              "required": true,
+              "minimum": 5,
+              "maximum": 1440,
+              "description": "Session timeout in minutes (5 min to 24 hours)"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
+                "two_factor_enabled": "boolean",
+                "auto_logout_enabled": "boolean",
+                "session_timeout_minutes": "integer"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "422": {
+              "description": "Validation Error (session_timeout_minutes out of range)"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/change-password",
+          "summary": "Change account password",
+          "description": "Change the user's login password. Requires the current password for verification. New password must be different from the old one. Fires a PASSWORD_CHANGED audit log and a Password Changed notification.",
+          "request_body": {
+            "current_password": {
+              "type": "string",
+              "required": true,
+              "description": "The user's existing password for verification"
+            },
+            "new_password": {
+              "type": "string",
+              "required": true,
+              "min_length": 8,
+              "description": "New password — must contain uppercase, lowercase, and a digit"
+            },
+            "confirm_password": {
+              "type": "string",
+              "required": true,
+              "description": "Must match new_password exactly"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Password changed successfully",
+              "body": {
+                "message": "Your account password was changed"
+              }
+            },
+            "400": {
+              "description": "Bad Request (Incorrect current password, or new password equals old)"
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "422": {
+              "description": "Validation Error (weak password, passwords do not match)"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/notifications",
+          "summary": "Get notification settings",
+          "description": "Retrieve the user's notification preference toggles across all categories.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "email_notifications": "boolean",
+                "push_notifications": "boolean",
+                "document_expiry_notifications": "boolean",
+                "shared_access_notifications": "boolean",
+                "trusted_contact_notifications": "boolean",
+                "security_alert_notifications": "boolean",
+                "weekly_summary_notifications": "boolean"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/notifications",
+          "summary": "Update notification settings",
+          "description": "Update all notification category toggles. When a category is disabled, related in-app notifications for that category will no longer be generated. Fires a NOTIFICATION_SETTINGS_UPDATED audit log.",
+          "request_body": {
+            "email_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Master toggle for email notifications"
+            },
+            "push_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Master toggle for push notifications"
+            },
+            "document_expiry_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Notifications when documents are about to expire"
+            },
+            "shared_access_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Notifications when documents are shared or accessed"
+            },
+            "trusted_contact_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Notifications related to trusted contact activity"
+            },
+            "security_alert_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Notifications for security events (password changes, profile updates)"
+            },
+            "weekly_summary_notifications": {
+              "type": "boolean",
+              "required": true,
+              "description": "Toggle for weekly summary digest notifications"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
+                "email_notifications": "boolean",
+                "push_notifications": "boolean",
+                "document_expiry_notifications": "boolean",
+                "shared_access_notifications": "boolean",
+                "trusted_contact_notifications": "boolean",
+                "security_alert_notifications": "boolean",
+                "weekly_summary_notifications": "boolean"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/privacy",
+          "summary": "Get privacy settings",
+          "description": "Retrieve the user's privacy visibility preferences.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "allow_profile_visibility": "boolean",
+                "allow_contact_visibility": "boolean"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/privacy",
+          "summary": "Update privacy settings",
+          "description": "Update the user's privacy visibility preferences. Fires a PRIVACY_SETTINGS_UPDATED audit log.",
+          "request_body": {
+            "allow_profile_visibility": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether profile info is visible to trusted contacts"
+            },
+            "allow_contact_visibility": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether contact list is visible to other users"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
+                "allow_profile_visibility": "boolean",
+                "allow_contact_visibility": "boolean"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/reminders",
+          "summary": "Get reminder settings",
+          "description": "Retrieve the user's document expiry reminder threshold. The background scheduler uses this value as the primary advance-warning milestone.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "document_reminder_days": "integer"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/reminders",
+          "summary": "Update reminder settings",
+          "description": "Update the document expiry reminder threshold. Fires a REMINDER_SETTINGS_UPDATED audit log.",
+          "request_body": {
+            "document_reminder_days": {
+              "type": "integer",
+              "required": true,
+              "minimum": 1,
+              "maximum": 365,
+              "description": "Number of days before expiry to start sending reminders"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated successfully",
+              "body": {
+                "document_reminder_days": "integer"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "422": {
+              "description": "Validation Error (value out of range 1–365)"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/account",
+          "summary": "Get account information",
+          "description": "Retrieve account-level metadata including when the account was created, last login timestamp, and counts of documents, trusted contacts, and active shares.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "account_created": "datetime",
+                "last_login": "datetime | null",
+                "documents_count": "integer",
+                "trusted_contacts_count": "integer",
+                "active_shares_count": "integer"
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/export",
+          "summary": "Export all settings",
+          "description": "Export a complete snapshot of all user settings categories as a single flat JSON object. Useful for the frontend to populate all settings pages in one request. Fires an ACCOUNT_SETTINGS_EXPORTED audit log.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "profile": {
+                  "full_name": "string",
+                  "email": "string",
+                  "created_at": "string (ISO 8601)",
+                  "last_login": "string (ISO 8601) | null"
+                },
+                "security": {
+                  "two_factor_enabled": "boolean",
+                  "auto_logout_enabled": "boolean",
+                  "session_timeout_minutes": "integer"
+                },
+                "notifications": {
+                  "email_notifications": "boolean",
+                  "push_notifications": "boolean",
+                  "document_expiry_notifications": "boolean",
+                  "shared_access_notifications": "boolean",
+                  "trusted_contact_notifications": "boolean",
+                  "security_alert_notifications": "boolean",
+                  "weekly_summary_notifications": "boolean"
+                },
+                "privacy": {
+                  "allow_profile_visibility": "boolean",
+                  "allow_contact_visibility": "boolean"
+                },
+                "reminders": {
+                  "document_reminder_days": "integer"
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/deactivate",
+          "summary": "Deactivate account",
+          "description": "Soft-deactivate the user's account. Requires password confirmation. After deactivation, all future login attempts and authenticated API requests return 401 Account is deactivated. Fires an ACCOUNT_DEACTIVATED audit log and an Account Deactivated notification.",
+          "request_body": {
+            "password": {
+              "type": "string",
+              "required": true,
+              "description": "Current account password for confirmation"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Account deactivated successfully",
+              "body": {
+                "message": "Account deactivated successfully"
+              }
+            },
+            "400": {
+              "description": "Bad Request (Incorrect password)"
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
         }
+      ],
+      "defaults": {
+        "email_notifications": true,
+        "push_notifications": true,
+        "document_expiry_notifications": true,
+        "shared_access_notifications": true,
+        "trusted_contact_notifications": true,
+        "security_alert_notifications": true,
+        "weekly_summary_notifications": false,
+        "two_factor_enabled": false,
+        "auto_logout_enabled": true,
+        "session_timeout_minutes": 30,
+        "document_reminder_days": 30,
+        "allow_profile_visibility": false,
+        "allow_contact_visibility": false
       }
     },
     {
-      "method": "PATCH",
-      "path": "/{contact_id}",
-      "summary": "Update a trusted contact",
-      "description": "Partially update details of an existing trusted contact. Enforces ownership authorization and duplicate email checks.",
-      "path_parameters": {
-        "contact_id": {
-          "type": "uuid",
-          "required": true,
-          "description": "ID of the trusted contact"
-        }
-      },
-      "request_body": {
-        "full_name": {
-          "type": "string",
-          "required": false,
-          "min_length": 2,
-          "max_length": 255
-        },
-        "email": {
-          "type": "string",
-          "required": false,
-          "format": "email"
-        },
-        "phone_number": {
-          "type": "string",
-          "required": false,
-          "max_length": 50
-        },
-        "relationship": {
-          "type": "string",
-          "required": false,
-          "max_length": 100
-        },
-        "notes": {
-          "type": "string",
-          "required": false,
-          "max_length": 1000
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Updated successfully",
-          "body": {
-            "id": "uuid",
-            "full_name": "string",
-            "email": "string",
-            "phone_number": "string | null",
-            "relationship": "string",
-            "notes": "string | null",
-            "created_at": "datetime",
-            "updated_at": "datetime"
+      "name": "Dashboard",
+      "base_path": "/api/dashboard",
+      "description": "Single aggregated endpoint that collects and summarises data from all VaultPass modules (Documents, Trusted Contacts, Shared Access, Notifications, Audit Logs, Settings) and returns the complete dashboard payload in one request. The dashboard owns no data and creates no records.",
+      "authentication": "Bearer JWT required",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "Get user dashboard",
+          "description": "Returns a complete, aggregated dashboard snapshot for the authenticated user. Uses two-phase async concurrency internally: independent queries run in parallel in Phase 1, then document expiry queries (which depend on the user's reminder_days setting) run in parallel in Phase 2. All data is scoped exclusively to the current user — no cross-user access is possible.",
+          "responses": {
+            "200": {
+              "description": "Success",
+              "body": {
+                "summary": {
+                  "total_documents": "integer",
+                  "trusted_contacts": "integer",
+                  "active_shares": "integer",
+                  "unread_notifications": "integer"
+                },
+                "document_health": {
+                  "valid_documents": "integer — documents with no expiry date or a future expiry date",
+                  "expiring_soon": "integer — documents expiring within the user's document_reminder_days window",
+                  "expired_documents": "integer — documents whose expiry date has already passed"
+                },
+                "categories": [
+                  {
+                    "category": "string — DocumentType enum value (e.g. PASSPORT, NATIONAL_ID, WILL, OTHER)",
+                    "count": "integer"
+                  }
+                ],
+                "expiring_documents": [
+                  {
+                    "document_id": "uuid",
+                    "document_name": "string",
+                    "category": "string",
+                    "expiry_date": "datetime (ISO 8601)",
+                    "days_remaining": "integer — computed as (expiry_date - now).days, minimum 0"
+                  }
+                ],
+                "recent_activity": [
+                  {
+                    "action": "string — audit log action constant (e.g. DOCUMENT_CREATED, LOGIN)",
+                    "description": "string",
+                    "created_at": "datetime (ISO 8601)"
+                  }
+                ],
+                "recent_notifications": [
+                  {
+                    "id": "uuid",
+                    "title": "string",
+                    "message": "string",
+                    "is_read": "boolean",
+                    "created_at": "datetime (ISO 8601)"
+                  }
+                ],
+                "account_overview": {
+                  "account_created": "datetime (ISO 8601)",
+                  "last_login": "datetime (ISO 8601) | null",
+                  "storage_used_mb": "float — total storage consumed by the user's documents, rounded to 1 decimal place"
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized (missing or invalid token, or deactivated account)"
+            }
+          },
+          "notes": {
+            "categories_sort": "Sorted descending by count — ready to feed directly into a pie chart",
+            "expiring_documents_sort": "Sorted ascending by expiry_date (soonest first), limited to top 10",
+            "recent_activity_limit": 20,
+            "recent_notifications_limit": 10,
+            "reminder_window": "expiring_soon and expiring_documents use the user's settings.document_reminder_days (default 30) as the lookahead window",
+            "no_audit_on_view": "Dashboard GET does not produce an audit log entry — it is a read-only aggregation",
+            "storage_units": "storage_used_mb is in megabytes (1 MB = 1,048,576 bytes)"
           }
-        },
-        "403": {
-          "description": "Forbidden (Contact owned by another user)"
-        },
-        "404": {
-          "description": "Not Found (Contact does not exist)"
-        },
-        "409": {
-          "description": "Conflict (Duplicate email for this owner)"
         }
-      }
-    },
-    {
-      "method": "DELETE",
-      "path": "/{contact_id}",
-      "summary": "Delete a trusted contact",
-      "description": "Permanently deletes a trusted contact from the database. Enforces ownership authorization.",
-      "path_parameters": {
-        "contact_id": {
-          "type": "uuid",
-          "required": true,
-          "description": "ID of the trusted contact"
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Deleted successfully",
-          "body": {
-            "message": "Trusted contact deleted successfully"
-          }
-        },
-        "403": {
-          "description": "Forbidden (Contact owned by another user)"
-        },
-        "404": {
-          "description": "Not Found (Contact does not exist)"
-        }
-      }
+      ]
     }
   ]
 }
+

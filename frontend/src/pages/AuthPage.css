@@ -62,6 +62,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -72,9 +73,11 @@
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
+
   100% {
     opacity: 0.6;
   }
@@ -94,6 +97,7 @@
 
 /* Respect Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
+
   .auth-container,
   .auth-stagger-item.animated,
   .auth-security-badge-shimmer,
@@ -368,7 +372,7 @@
   outline: none;
 }
 
-.auth-input:focus + .auth-input-icon,
+.auth-input:focus+.auth-input-icon,
 .auth-input-wrapper:has(.auth-input:focus) .auth-input-icon {
   color: var(--vault-muted-blue);
 }

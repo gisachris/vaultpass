@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    CORS_ORIGIN_REGEX: str | None = None
 
     # Supabase Storage settings
     SUPABASE_URL: str = "https://crzevbgduvewwpwyaqfa.supabase.co"

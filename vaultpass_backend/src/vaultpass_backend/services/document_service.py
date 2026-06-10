@@ -104,6 +104,23 @@ async def upload_document(
         db.add(new_doc)
         await db.commit()
         await db.refresh(new_doc)
+        
+        # Trigger notification event
+        from vaultpass_backend.services.notification import NotificationService
+        await NotificationService.notify_document_uploaded(db, owner_id, new_doc.id, new_doc.title)
+
+        # Audit log
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+        await AuditService.log_action(
+            db=db,
+            user_id=owner_id,
+            action=constants.DOCUMENT_CREATED,
+            entity_type="DOCUMENT",
+            entity_id=new_doc.id,
+            description=f"Document '{new_doc.title}' uploaded.",
+        )
+
         return new_doc
     except Exception as e:
         # Rollback database transaction and attempt cleanup from Supabase Storage
@@ -192,6 +209,19 @@ async def generate_download_link(
     doc = await get_document_by_id(db, doc_id, user_id)
     # Generate 1-hour secure URL
     signed_url = await storage_service.generate_signed_url(doc.file_path, expires_in_seconds=3600)
+
+    # Audit log
+    from vaultpass_backend.services.audit_service import AuditService
+    from vaultpass_backend.core import constants
+    await AuditService.log_action(
+        db=db,
+        user_id=user_id,
+        action=constants.DOCUMENT_DOWNLOADED,
+        entity_type="DOCUMENT",
+        entity_id=doc_id,
+        description=f"Download link generated for document '{doc.title}'.",
+    )
+
     return signed_url
 
 async def update_document(
@@ -217,6 +247,23 @@ async def update_document(
         
     await db.commit()
     await db.refresh(doc)
+    
+    # Trigger notification event
+    from vaultpass_backend.services.notification import NotificationService
+    await NotificationService.notify_document_updated(db, user_id, doc.id, doc.title)
+
+    # Audit log
+    from vaultpass_backend.services.audit_service import AuditService
+    from vaultpass_backend.core import constants
+    await AuditService.log_action(
+        db=db,
+        user_id=user_id,
+        action=constants.DOCUMENT_UPDATED,
+        entity_type="DOCUMENT",
+        entity_id=doc.id,
+        description=f"Document '{doc.title}' metadata updated.",
+    )
+
     return doc
 
 async def delete_document(
@@ -232,6 +279,25 @@ async def delete_document(
     # Delete from Supabase Storage first
     await storage_service.delete_file(doc.file_path)
     
+    doc_title = doc.title
+    doc_id = doc.id
+
     # Delete from DB
     await db.delete(doc)
     await db.commit()
+
+    # Trigger notification event
+    from vaultpass_backend.services.notification import NotificationService
+    await NotificationService.notify_document_deleted(db, user_id, doc_title)
+
+    # Audit log
+    from vaultpass_backend.services.audit_service import AuditService
+    from vaultpass_backend.core import constants
+    await AuditService.log_action(
+        db=db,
+        user_id=user_id,
+        action=constants.DOCUMENT_DELETED,
+        entity_type="DOCUMENT",
+        entity_id=doc_id,
+        description=f"Document '{doc_title}' deleted.",
+    )

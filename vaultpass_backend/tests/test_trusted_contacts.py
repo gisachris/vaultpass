@@ -40,6 +40,7 @@ def test_router_create_contact_success(mock_create, override_auth_dependency, mo
     mock_contact.phone_number = "+250788000000"
     mock_contact.relationship = "Brother"
     mock_contact.notes = "Emergency contact"
+    mock_contact.linked_user_id = None
     mock_contact.created_at = datetime.now(timezone.utc)
     mock_contact.updated_at = None
 
@@ -90,6 +91,7 @@ def test_router_list_contacts(mock_list, override_auth_dependency, mock_user):
     mock_contact.phone_number = None
     mock_contact.relationship = "Brother"
     mock_contact.notes = None
+    mock_contact.linked_user_id = None
     mock_contact.created_at = datetime.now(timezone.utc)
     mock_contact.updated_at = None
 
@@ -112,6 +114,7 @@ def test_router_search_contacts(mock_search, override_auth_dependency, mock_user
     mock_contact.phone_number = None
     mock_contact.relationship = "Brother"
     mock_contact.notes = None
+    mock_contact.linked_user_id = None
     mock_contact.created_at = datetime.now(timezone.utc)
     mock_contact.updated_at = None
 
@@ -135,6 +138,7 @@ def test_router_get_single_contact(mock_get, override_auth_dependency, mock_user
     mock_contact.phone_number = None
     mock_contact.relationship = "Brother"
     mock_contact.notes = None
+    mock_contact.linked_user_id = None
     mock_contact.created_at = datetime.now(timezone.utc)
     mock_contact.updated_at = None
 
@@ -155,6 +159,7 @@ def test_router_update_contact(mock_update, override_auth_dependency, mock_user)
     mock_contact.phone_number = None
     mock_contact.relationship = "Brother"
     mock_contact.notes = "Updated notes"
+    mock_contact.linked_user_id = None
     mock_contact.created_at = datetime.now(timezone.utc)
     mock_contact.updated_at = datetime.now(timezone.utc)
 
@@ -182,9 +187,10 @@ def test_router_delete_contact(mock_delete, override_auth_dependency):
 
 # ================= SERVICE LAYER TESTS =================
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_added", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_email", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.create_contact", new_callable=AsyncMock)
-def test_service_create_contact_success(mock_create, mock_get_email, mock_user):
+def test_service_create_contact_success(mock_create, mock_get_email, mock_notify, mock_user):
     from vaultpass_backend.services.trusted_contact import TrustedContactService
     from vaultpass_backend.schemas.trusted_contact import TrustedContactCreate
     import asyncio
@@ -192,6 +198,11 @@ def test_service_create_contact_success(mock_create, mock_get_email, mock_user):
     mock_get_email.return_value = None
     
     mock_db = AsyncMock()
+    # Mock user lookup returning None (external contact)
+    mock_user_result = MagicMock()
+    mock_user_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = mock_user_result
+
     contact_data = TrustedContactCreate(
         full_name="Sarah Doe",
         email="sarah@gmail.com",
@@ -306,9 +317,10 @@ def test_service_update_contact_duplicate_conflict(mock_get_email, mock_update, 
     assert exc_info.value.status_code == status.HTTP_409_CONFLICT
     assert "already exists" in exc_info.value.detail
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_deleted", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_id", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.delete_contact", new_callable=AsyncMock)
-def test_service_delete_contact_success(mock_delete, mock_get_id, mock_user):
+def test_service_delete_contact_success(mock_delete, mock_get_id, mock_notify_deleted, mock_user):
     from vaultpass_backend.services.trusted_contact import TrustedContactService
     import asyncio
 
@@ -325,3 +337,134 @@ def test_service_delete_contact_success(mock_delete, mock_get_id, mock_user):
 
     asyncio.run(run_test())
     mock_delete.assert_called_once_with(mock_db, mock_contact)
+
+
+# ================= AUTO-LINKING TESTS =================
+
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_added", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_email", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.create_contact", new_callable=AsyncMock)
+def test_create_contact_links_registered_user(mock_create, mock_get_email, mock_notify, mock_user):
+    """When the contact email matches a registered VaultPass user, linked_user_id is set automatically."""
+    from vaultpass_backend.services.trusted_contact import TrustedContactService
+    from vaultpass_backend.schemas.trusted_contact import TrustedContactCreate
+    from vaultpass_backend.models.user import User
+    import asyncio
+
+    recipient_id = uuid.uuid4()
+    mock_get_email.return_value = None  # no duplicate
+
+    # Simulate a registered user found by email
+    matched_user = MagicMock(spec=User)
+    matched_user.id = recipient_id
+    mock_user_result = MagicMock()
+    mock_user_result.scalar_one_or_none.return_value = matched_user
+
+    mock_db = AsyncMock()
+    mock_db.execute.return_value = mock_user_result
+
+    created_contact = MagicMock(spec=TrustedContact)
+    created_contact.id = uuid.uuid4()
+    created_contact.full_name = "Jane Smith"
+    created_contact.linked_user_id = recipient_id
+    mock_create.return_value = created_contact
+
+    contact_data = TrustedContactCreate(
+        full_name="Jane Smith",
+        email="jane@vaultpass.com",
+        relationship="Colleague"
+    )
+
+    async def run_test():
+        return await TrustedContactService.create_contact(mock_db, mock_user.id, contact_data)
+
+    result = asyncio.run(run_test())
+
+    # The contact passed to create should have linked_user_id set
+    created_arg = mock_create.call_args[0][1]  # second positional arg = TrustedContact instance
+    assert created_arg.linked_user_id == recipient_id
+
+
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_added", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_email", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.create_contact", new_callable=AsyncMock)
+def test_create_contact_external_no_link(mock_create, mock_get_email, mock_notify, mock_user):
+    """When the contact email does not match any user, linked_user_id is None."""
+    from vaultpass_backend.services.trusted_contact import TrustedContactService
+    from vaultpass_backend.schemas.trusted_contact import TrustedContactCreate
+    import asyncio
+
+    mock_get_email.return_value = None
+
+    # No registered user found
+    mock_user_result = MagicMock()
+    mock_user_result.scalar_one_or_none.return_value = None
+    mock_db = AsyncMock()
+    mock_db.execute.return_value = mock_user_result
+
+    created_contact = MagicMock(spec=TrustedContact)
+    created_contact.id = uuid.uuid4()
+    created_contact.full_name = "Bob External"
+    created_contact.linked_user_id = None
+    mock_create.return_value = created_contact
+
+    contact_data = TrustedContactCreate(
+        full_name="Bob External",
+        email="bob@nonexistent.com",
+        relationship="Friend"
+    )
+
+    async def run_test():
+        return await TrustedContactService.create_contact(mock_db, mock_user.id, contact_data)
+
+    asyncio.run(run_test())
+
+    created_arg = mock_create.call_args[0][1]
+    assert created_arg.linked_user_id is None
+
+
+@patch("vaultpass_backend.services.notification.NotificationService.notify_contact_updated", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_id", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.update_contact", new_callable=AsyncMock)
+@patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_email", new_callable=AsyncMock)
+def test_update_contact_email_updates_link(mock_get_email, mock_update, mock_get_id, mock_notify, mock_user):
+    """Changing the email on a contact re-evaluates the linked_user_id."""
+    from vaultpass_backend.services.trusted_contact import TrustedContactService
+    from vaultpass_backend.schemas.trusted_contact import TrustedContactUpdate
+    from vaultpass_backend.models.user import User
+    import asyncio
+
+    contact_id = uuid.uuid4()
+    recipient_id = uuid.uuid4()
+
+    mock_contact = MagicMock(spec=TrustedContact)
+    mock_contact.id = contact_id
+    mock_contact.owner_id = mock_user.id
+    mock_contact.email = "old@gmail.com"
+    mock_get_id.return_value = mock_contact
+    mock_get_email.return_value = None  # no duplicate
+
+    # New email belongs to a registered user
+    matched_user = MagicMock(spec=User)
+    matched_user.id = recipient_id
+    mock_user_result = MagicMock()
+    mock_user_result.scalar_one_or_none.return_value = matched_user
+
+    mock_db = AsyncMock()
+    mock_db.execute.return_value = mock_user_result
+
+    updated_contact = MagicMock(spec=TrustedContact)
+    updated_contact.id = contact_id
+    updated_contact.linked_user_id = recipient_id
+    mock_update.return_value = updated_contact
+
+    update_data = TrustedContactUpdate(email="new_registered@vaultpass.com")
+
+    async def run_test():
+        return await TrustedContactService.update_contact(mock_db, contact_id, mock_user.id, update_data)
+
+    result = asyncio.run(run_test())
+
+    # update_dict passed to repo should contain linked_user_id
+    call_kwargs = mock_update.call_args[0][2]  # third positional arg = update_dict
+    assert call_kwargs.get("linked_user_id") == recipient_id

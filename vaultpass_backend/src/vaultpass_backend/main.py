@@ -10,6 +10,12 @@ from vaultpass_backend.core.config import settings
 from vaultpass_backend.api.auth import router as auth_router
 from vaultpass_backend.api.documents import router as documents_router
 from vaultpass_backend.api.trusted_contacts import router as trusted_contacts_router
+from vaultpass_backend.api.document_shares import router as shares_router, public_router as public_shares_router
+from vaultpass_backend.api.notifications import router as notifications_router
+from vaultpass_backend.api.audit_logs import router as audit_logs_router
+from vaultpass_backend.api.settings_router import router as settings_router
+from vaultpass_backend.api.dashboard_router import router as dashboard_router
+from vaultpass_backend.services.notification_scheduler import NotificationScheduler
 
 logger = logging.getLogger("vaultpass")
 
@@ -32,14 +38,27 @@ def run_migrations() -> None:
 async def lifespan(app: FastAPI):
     """
     FastAPI lifespan event handler.
-    Runs migrations on startup and performs cleanup on shutdown.
+    Runs migrations on startup, starts the background scheduler loop,
+    and performs cleanup on shutdown.
     """
     logger.info("Starting VaultPass API...")
     import asyncio
     await asyncio.to_thread(run_migrations)
+    
+    # Start background notification scheduler
+    scheduler_task = asyncio.create_task(NotificationScheduler.start_scheduler_loop())
+    app.state.scheduler_task = scheduler_task
+    
     logger.info("VaultPass API is ready.")
     yield
     logger.info("Shutting down VaultPass API...")
+    
+    # Gracefully cancel background scheduler task
+    scheduler_task.cancel()
+    try:
+        await scheduler_task
+    except asyncio.CancelledError:
+        logger.info("Background notification scheduler task cancelled.")
 
 
 app = FastAPI(
@@ -53,6 +72,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    allow_origin_regex=settings.CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,6 +82,13 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(trusted_contacts_router, prefix="/api")
+app.include_router(shares_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
+app.include_router(audit_logs_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
+app.include_router(public_shares_router, prefix="/api")
+app.include_router(public_shares_router)
 
 
 @app.get("/")

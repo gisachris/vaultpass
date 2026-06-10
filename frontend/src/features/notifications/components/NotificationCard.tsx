@@ -41,7 +41,7 @@ export function NotificationCard({
   return (
     <article className={`notification-card ${notification.is_read ? '' : 'notification-card--unread'}`}>
       <div className="notification-card__icon-container">
-        <span className={`notification-card__icon ${typeItem.colorClass}`}>
+        <span className={`material-symbols-outlined notification-card__icon ${typeItem.colorClass}`}>
           {typeItem.icon}
         </span>
       </div>

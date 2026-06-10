@@ -10,7 +10,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 280px;
+  width: 240px;
   height: 100vh;
   padding: 24px 16px;
   background: #fbf9fa;
@@ -96,13 +96,13 @@
 }
 
 .trusted-main-content {
-  margin-left: 280px;
-  width: calc(100% - 280px);
+  margin-left: 50px;
+  width: calc(100% - 50px);
 }
 
 .trusted-topbar {
   position: fixed;
-  left: 280px;
+  left: 240px;
   right: 0;
   top: 0;
   height: 64px;
@@ -291,6 +291,60 @@
   border-radius: 1rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.contact-card-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.contact-card-action-button {
+  border: none;
+  background: transparent;
+  color: #475569;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.contact-card-action-button:hover {
+  background: #e2e8f0;
+}
+
+.contact-card-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  min-width: 160px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.contact-card-menu button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 12px 16px;
+  width: 100%;
+  cursor: pointer;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.contact-card-menu button:hover {
+  background: #f8fafc;
 }
 
 .trusted-contact-meta {
@@ -418,17 +472,17 @@
   align-items: flex-start;
   justify-content: center;
   padding: 48px 24px 24px;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 50;
 }
 
 .documents-modal-window {
   width: min(760px, 100%);
-  max-height: calc(100vh - 96px);
   margin-top: 20px;
+  margin-bottom: 20px;
   background: #ffffff;
   border-radius: 1.25rem;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 32px 60px rgba(15, 23, 42, 0.18);
 }
 

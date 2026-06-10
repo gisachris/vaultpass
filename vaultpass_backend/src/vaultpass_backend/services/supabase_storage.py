@@ -127,6 +127,8 @@ class SupabaseStorageService:
                 )
             
             if signed_url.startswith("/"):
+                if not signed_url.startswith("/storage/v1/"):
+                    signed_url = f"/storage/v1{signed_url}"
                 signed_url = f"{self.url.rstrip('/')}{signed_url}"
             return signed_url
 
