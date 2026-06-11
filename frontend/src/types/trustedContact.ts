@@ -5,6 +5,8 @@ export interface TrustedContactModel {
   phone_number?: string | null;
   relationship: string;
   notes?: string | null;
+  linked_user_id?: string | null;
+  is_registered_user?: boolean;
   created_at: string;
   updated_at?: string | null;
 }
