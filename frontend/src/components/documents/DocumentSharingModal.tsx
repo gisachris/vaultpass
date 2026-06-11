@@ -316,6 +316,33 @@ export function DocumentSharingModal({ open, document, onClose }: DocumentSharin
                     </div>
                   </div>
 
+                  {(() => {
+                    const selContact = contacts.find((c) => c.id === selectedContactId);
+                    if (selContact && !selContact.linked_user_id) {
+                      return (
+                        <div className="dsm-warning-alert" style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          background: '#fffbeb',
+                          border: '1px solid #fef3c7',
+                          color: '#b45309',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          fontSize: '0.9rem',
+                          lineHeight: '1.5',
+                          marginBottom: '16px'
+                        }}>
+                          <span className="material-symbols-outlined" style={{ color: '#d97706', fontSize: '1.25rem' }}>warning</span>
+                          <p style={{ margin: 0 }}>
+                            This contact is not a registered VaultPass user. Only an external link will work unless they create an account.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   {/* Permission selector */}
                   <div className="dsm-field">
                     <label className="dsm-label">Permission Level</label>

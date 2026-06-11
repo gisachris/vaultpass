@@ -135,19 +135,10 @@ export function TrustedContactsPage() {
     setSubmitting(true);
 
     try {
-      const checkResponse = await api.get<{ exists: boolean }>('/auth/check-email', {
-        params: { email: form.email.trim() }
-      });
-
-      if (!checkResponse.data.exists) {
-        setShowInviteConfirmation(true);
-        setSubmitting(false);
-        return;
-      }
-
       await createTrustedContactDirectly();
     } catch (err: any) {
-      setInvitationError(err.response?.data?.detail || 'Unable to verify email or add contact.');
+      setInvitationError(err.response?.data?.detail || 'Unable to add contact.');
+    } finally {
       setSubmitting(false);
     }
   };
