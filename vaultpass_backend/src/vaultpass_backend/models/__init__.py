@@ -6,6 +6,7 @@ from vaultpass_backend.models.document_share import DocumentShare
 from vaultpass_backend.models.notification import Notification, NotificationType
 from vaultpass_backend.models.audit_log import AuditLog
 from vaultpass_backend.models.settings import UserSettings
+from vaultpass_backend.models.family_relationship import FamilyRelationship, RelationshipType, RelationshipStatus
 
 __all__ = [
     "Base",
@@ -17,5 +18,8 @@ __all__ = [
     "Notification",
     "NotificationType",
     "AuditLog",
-    "UserSettings"
+    "UserSettings",
+    "FamilyRelationship",
+    "RelationshipType",
+    "RelationshipStatus",
 ]
