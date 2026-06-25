@@ -2,6 +2,7 @@ import uuid
 from typing import List, Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from vaultpass_backend.models.trusted_contact import TrustedContact
 
 class TrustedContactRepository:
@@ -112,6 +113,25 @@ class TrustedContactRepository:
             .order_by(TrustedContact.created_at.desc())
             .offset(offset)
             .limit(limit)
+        )
+        result = await db.execute(query)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def get_unlinked_contacts_by_email(db: AsyncSession, email: str) -> List[TrustedContact]:
+        """
+        Retrieve every trusted_contacts row, across ALL owners, where
+        linked_user_id IS NULL and email matches the given address
+        case-insensitively. Eager-loads the `owner` relationship so callers
+        can read owner.full_name without triggering N+1 queries.
+        """
+        query = (
+            select(TrustedContact)
+            .options(selectinload(TrustedContact.owner))
+            .where(
+                TrustedContact.linked_user_id.is_(None),
+                func.lower(TrustedContact.email) == email.lower()
+            )
         )
         result = await db.execute(query)
         return list(result.scalars().all())

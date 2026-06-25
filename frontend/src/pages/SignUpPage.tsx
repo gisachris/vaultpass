@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { sendVerificationEmail } from '../services/emailService';
@@ -8,13 +8,14 @@ import './AuthPage.css';
 export function SignUpPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [formData, setFormData] = useState({
+  const [searchParams] = useSearchParams();
+  const [formData, setFormData] = useState(() => ({
     fullName: '',
-    email: '',
+    email: searchParams.get('email') || '',
     password: '',
     confirmPassword: '',
     terms: false,
-  });
+  }));
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

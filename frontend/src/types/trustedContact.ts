@@ -19,7 +19,7 @@ export interface TrustedContactListResponse {
 }
 
 export interface TrustedContactCreatePayload {
-  full_name: string;
+  full_name?: string;
   email: string;
   phone_number?: string;
   relationship: string;

@@ -1,8 +1,9 @@
 import uuid
+import re
 import logging
 from typing import Tuple, List, Optional
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.models.trusted_contact import TrustedContact
@@ -40,16 +41,27 @@ class TrustedContactService:
                 detail="Trusted contact with this email already exists"
             )
 
-        # Auto-link to a registered VaultPass user by email match
+        # Auto-link to a registered VaultPass user by email match (case-insensitive)
         user_result = await db.execute(
-            select(User).where(User.email == contact_data.email)
+            select(User).where(func.lower(User.email) == contact_data.email.lower())
         )
         matched_user = user_result.scalar_one_or_none()
         linked_user_id = matched_user.id if matched_user else None
 
+        # Resolve the contact's display name: prefer an explicitly provided
+        # name, otherwise the matched registered user's real name, otherwise
+        # a placeholder derived from the email (overwritten with the real
+        # name once the invitee registers — see reconcile_new_user_contacts).
+        if contact_data.full_name and contact_data.full_name.strip():
+            resolved_full_name = contact_data.full_name.strip()
+        elif matched_user:
+            resolved_full_name = matched_user.full_name
+        else:
+            resolved_full_name = TrustedContactService._derive_name_from_email(contact_data.email)
+
         contact = TrustedContact(
             owner_id=owner_id,
-            full_name=contact_data.full_name,
+            full_name=resolved_full_name,
             email=contact_data.email,
             phone_number=contact_data.phone_number,
             relationship=contact_data.relationship,
@@ -60,9 +72,21 @@ class TrustedContactService:
         created_contact = await TrustedContactRepository.create_contact(db, contact)
         logger.info(f"User {owner_id} created trusted contact {created_contact.id} (linked_user_id={linked_user_id})")
 
-        # Trigger notification event
+        # Trigger notification event (owner side — unchanged)
         from vaultpass_backend.services.notification import NotificationService
         await NotificationService.notify_contact_added(db, owner_id, created_contact.id, created_contact.full_name)
+
+        # Notify the linked contact themselves, if they are a registered user
+        if linked_user_id:
+            owner_result = await db.execute(select(User).where(User.id == owner_id))
+            owner = owner_result.scalar_one_or_none()
+            owner_name = owner.full_name if owner else "Someone"
+            await NotificationService.notify_added_as_trusted_contact(
+                db=db,
+                user_id=linked_user_id,
+                owner_name=owner_name,
+                contact_id=created_contact.id,
+            )
 
         # Audit log
         from vaultpass_backend.services.audit_service import AuditService
@@ -77,6 +101,59 @@ class TrustedContactService:
         )
 
         return created_contact
+
+    @staticmethod
+    def _derive_name_from_email(email: str) -> str:
+        """
+        Best-effort placeholder display name derived from an email's local
+        part, used when no name was provided and the email doesn't match a
+        registered user yet. Replaced with the invitee's real name once they
+        register (see reconcile_new_user_contacts).
+        """
+        local_part = email.split("@", 1)[0]
+        words = [w for w in re.split(r"[._+\-]+", local_part) if w]
+        if not words:
+            return email
+        return " ".join(word.capitalize() for word in words)
+
+    @staticmethod
+    async def reconcile_new_user_contacts(db: AsyncSession, new_user: User) -> None:
+        """
+        Called immediately after a brand-new user registers. Finds every
+        pre-existing trusted_contacts row (across ALL owners) whose email
+        matches the new user's email case-insensitively and is not yet
+        linked to any user, links it to the new account, and notifies the
+        new user for each match.
+        """
+        matches = await TrustedContactRepository.get_unlinked_contacts_by_email(db, new_user.email)
+        if not matches:
+            return
+
+        from vaultpass_backend.services.notification import NotificationService
+        from vaultpass_backend.services.audit_service import AuditService
+        from vaultpass_backend.core import constants
+
+        for contact in matches:
+            await TrustedContactRepository.update_contact(
+                db, contact, {"linked_user_id": new_user.id, "full_name": new_user.full_name}
+            )
+            owner_name = contact.owner.full_name if contact.owner else "Someone"
+
+            await NotificationService.notify_added_as_trusted_contact(
+                db=db,
+                user_id=new_user.id,
+                owner_name=owner_name,
+                contact_id=contact.id,
+            )
+
+            await AuditService.log_action(
+                db=db,
+                user_id=new_user.id,
+                action=constants.CONTACT_LINKED_TO_USER,
+                entity_type="TRUSTED_CONTACT",
+                entity_id=contact.id,
+                description=f"Newly registered account linked to existing trusted-contact entry owned by '{owner_name}'.",
+            )
 
     @staticmethod
     async def get_contact_by_id(
@@ -134,9 +211,9 @@ class TrustedContactService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Trusted contact with this email already exists"
                 )
-            # Re-link (or unlink) based on the new email
+            # Re-link (or unlink) based on the new email (case-insensitive)
             user_result = await db.execute(
-                select(User).where(User.email == new_email)
+                select(User).where(func.lower(User.email) == new_email.lower())
             )
             matched_user = user_result.scalar_one_or_none()
             update_dict["linked_user_id"] = matched_user.id if matched_user else None

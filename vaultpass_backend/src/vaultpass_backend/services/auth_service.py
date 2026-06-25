@@ -1,4 +1,5 @@
 import uuid
+import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -6,6 +7,8 @@ from fastapi import HTTPException, status
 from vaultpass_backend.models.user import User
 from vaultpass_backend.schemas.auth import RegisterRequest, LoginRequest
 from vaultpass_backend.core.security import get_password_hash, verify_password
+
+logger = logging.getLogger("vaultpass")
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     """
@@ -52,6 +55,18 @@ async def register_user(db: AsyncSession, register_data: RegisterRequest) -> Use
     
     await db.commit()
     await db.refresh(new_user)
+
+    # Reconcile any pre-existing trusted-contact rows (across all owners)
+    # that reference this email but weren't linked to a registered user yet.
+    # Runs unconditionally at registration — not gated behind email verification.
+    # The account is already durably created at this point, so a failure here
+    # must not surface as a failed registration to the caller.
+    try:
+        from vaultpass_backend.services.trusted_contact import TrustedContactService
+        await TrustedContactService.reconcile_new_user_contacts(db, new_user)
+    except Exception:
+        logger.exception(f"Failed to reconcile trusted contacts for new user {new_user.id}")
+
     return new_user
 
 async def authenticate_user(db: AsyncSession, login_data: LoginRequest) -> User:

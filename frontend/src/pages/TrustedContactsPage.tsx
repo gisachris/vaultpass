@@ -2,7 +2,9 @@ import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { createTrustedContact, deleteTrustedContact, updateTrustedContact } from '../services/trustedContactsService';
+import { sendTrustedContactNotificationEmail } from '../services/trustedContactEmailService';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
+import { useAuth } from '../context/AuthContext';
 import { TrustedContactCreatePayload, TrustedContactModel } from '../types/trustedContact';
 import { api } from '../lib/api';
 import { AppSidebar } from '../components/ui/AppSidebar';
@@ -28,6 +30,7 @@ function getInitials(name: string) {
 
 export function TrustedContactsPage() {
   const location = useLocation();
+  const { user } = useAuth();
   const {
     contacts,
     page,
@@ -45,7 +48,6 @@ export function TrustedContactsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [invitationError, setInvitationError] = useState('');
   const [form, setForm] = useState<TrustedContactCreatePayload>({
-    full_name: '',
     email: '',
     phone_number: '',
     relationship: '',
@@ -60,7 +62,7 @@ export function TrustedContactsPage() {
   const [deleteError, setDeleteError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<TrustedContactModel | null>(null);
   const [showInviteConfirmation, setShowInviteConfirmation] = useState(false);
-  const [editForm, setEditForm] = useState<TrustedContactCreatePayload>({
+  const [editForm, setEditForm] = useState<TrustedContactCreatePayload & { full_name: string }>({
     full_name: '',
     email: '',
     phone_number: '',
@@ -99,8 +101,7 @@ export function TrustedContactsPage() {
     setSubmitting(true);
     setInvitationError('');
     try {
-      await createTrustedContact({
-        full_name: form.full_name.trim(),
+      const result = await createTrustedContact({
         email: form.email.trim(),
         phone_number: form.phone_number ? form.phone_number.trim() : undefined,
         relationship: form.relationship.trim(),
@@ -109,7 +110,23 @@ export function TrustedContactsPage() {
       toast.success('Trusted contact added successfully.');
       setInviteOpen(false);
       setShowInviteConfirmation(false);
-      setForm({ full_name: '', email: '', phone_number: '', relationship: '', notes: '' });
+
+      const createdContact = result.data;
+      toast.promise(
+        sendTrustedContactNotificationEmail({
+          toEmail: createdContact.email,
+          toName: createdContact.full_name,
+          ownerName: user?.full_name || 'Someone',
+          isRegisteredUser: Boolean(createdContact.is_registered_user),
+        }),
+        {
+          loading: 'Sending notification email...',
+          success: 'Notification email sent to your trusted contact.',
+          error: 'Failed to send notification email.',
+        }
+      );
+
+      setForm({ email: '', phone_number: '', relationship: '', notes: '' });
       await refresh();
     } catch (err: any) {
       setInvitationError(err.response?.data?.detail || 'Unable to add trusted contact.');
@@ -127,8 +144,8 @@ export function TrustedContactsPage() {
     event.preventDefault();
     setInvitationError('');
 
-    if (!form.full_name.trim() || !form.email.trim() || !form.relationship.trim()) {
-      setInvitationError('Full name, email, and relationship are required.');
+    if (!form.email.trim() || !form.relationship.trim()) {
+      setInvitationError('Email and relationship are required.');
       return;
     }
 
@@ -365,18 +382,6 @@ export function TrustedContactsPage() {
             </div>
 
             <form className="documents-modal-body" onSubmit={handleInviteSubmit}>
-              <div className="documents-modal-row documents-modal-row--full">
-                <label htmlFor="trusted-full_name">Full name</label>
-                <input
-                  id="trusted-full_name"
-                  name="full_name"
-                  value={form.full_name}
-                  onChange={handleInputChange}
-                  placeholder="Example: Jane Doe"
-                  required
-                />
-              </div>
-
               <div className="documents-modal-row documents-modal-row--full">
                 <label htmlFor="trusted-email">Email address</label>
                 <input

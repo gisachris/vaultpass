@@ -263,6 +263,27 @@ class NotificationService:
             type=NotificationType.INFO
         )
 
+    @staticmethod
+    async def notify_added_as_trusted_contact(
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        owner_name: str,
+        contact_id: uuid.UUID,
+    ) -> Optional[Notification]:
+        """
+        Notify a registered VaultPass user that someone has added them as
+        their trusted contact. Targets the LINKED USER directly, not the
+        owner (mirrors notify_internal_share_received's recipient-targeting).
+        """
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=user_id,
+            title="Added as a Trusted Contact",
+            message=f"{owner_name} added you as their trusted contact.",
+            type=NotificationType.INFO,
+            related_contact_id=contact_id,
+        )
+
     # 3. Shared Access Events
     @staticmethod
     async def notify_document_shared(
