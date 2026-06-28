@@ -87,8 +87,14 @@ async def list_docs(
         search=search
     )
     
+    items_response = []
+    for item in items:
+        resp = DocumentCreateResponse.model_validate(item)
+        resp.permission_source = "OWNER"
+        items_response.append(resp)
+        
     return DocumentListResponse(
-        items=[DocumentCreateResponse.model_validate(item) for item in items],
+        items=items_response,
         total=total,
         page=page,
         limit=limit
@@ -107,10 +113,21 @@ async def get_details(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get detailed metadata of a specific document owned by the user.
+    Get detailed metadata of a specific document owned by the user or accessed via guardianship.
     """
-    doc = await get_document_by_id(db=db, doc_id=id, user_id=current_user.id)
-    return DocumentDetailResponse.model_validate(doc)
+    doc = await get_document_by_id(db=db, doc_id=id, user_id=current_user.id, allow_guardian=True)
+    res = DocumentDetailResponse.model_validate(doc)
+    if doc.owner_id == current_user.id:
+        res.permission_source = "OWNER"
+    else:
+        # Check if guardian
+        from vaultpass_backend.repository.family import FamilyRepository
+        is_guardian = await FamilyRepository.check_is_guardian(db, guardian_id=current_user.id, dependent_id=doc.owner_id)
+        if is_guardian:
+            res.permission_source = "GUARDIAN"
+        else:
+            res.permission_source = "SHARED"
+    return res
 
 @router.get(
     "/{id}/preview",

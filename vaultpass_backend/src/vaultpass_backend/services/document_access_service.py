@@ -49,7 +49,13 @@ class DocumentAccessService:
         if doc.owner_id == requesting_user_id:
             return doc, None
 
-        # 2. Share check
+        # 2. Guardian check (before document sharing check)
+        from vaultpass_backend.repository.family import FamilyRepository
+        is_guardian = await FamilyRepository.check_is_guardian(db, guardian_id=requesting_user_id, dependent_id=doc.owner_id)
+        if is_guardian:
+            return doc, None
+
+        # 3. Share check
         share_query = select(DocumentShare).where(
             DocumentShare.document_id == document_id,
             DocumentShare.recipient_user_id == requesting_user_id,
@@ -96,14 +102,18 @@ class DocumentAccessService:
         preview_url = await storage_service.generate_signed_url(doc.file_path, expires_in)
         expires_at_dt = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
+        # Check if guardian access
+        is_guardian_access = (doc.owner_id != requesting_user_id) and (share is None)
+        action = constants.GUARDIAN_DOCUMENT_ACCESSED if is_guardian_access else constants.DOCUMENT_PREVIEWED
+
         # Audit Log
         await AuditService.log_action(
             db=db,
             user_id=requesting_user_id,
-            action=constants.DOCUMENT_PREVIEWED,
+            action=action,
             entity_type="DOCUMENT",
             entity_id=doc.id,
-            description=f"Previewed document '{doc.title}'",
+            description=f"Accessed document '{doc.title}' via guardian relationship" if is_guardian_access else f"Previewed document '{doc.title}'",
             ip_address=ip_address,
             user_agent=user_agent
         )
@@ -159,14 +169,18 @@ class DocumentAccessService:
         download_url = await storage_service.generate_signed_url(doc.file_path, expires_in)
         expires_at_dt = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
+        # Check if guardian access
+        is_guardian_access = (doc.owner_id != requesting_user_id) and (share is None)
+        action = constants.GUARDIAN_DOCUMENT_ACCESSED if is_guardian_access else constants.DOCUMENT_DOWNLOADED
+
         # Audit Log
         await AuditService.log_action(
             db=db,
             user_id=requesting_user_id,
-            action=constants.DOCUMENT_DOWNLOADED,
+            action=action,
             entity_type="DOCUMENT",
             entity_id=doc.id,
-            description=f"Downloaded document '{doc.title}'",
+            description=f"Accessed document '{doc.title}' via guardian relationship" if is_guardian_access else f"Downloaded document '{doc.title}'",
             ip_address=ip_address,
             user_agent=user_agent
         )

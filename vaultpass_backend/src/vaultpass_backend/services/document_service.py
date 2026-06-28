@@ -137,10 +137,11 @@ async def upload_document(
 async def get_document_by_id(
     db: AsyncSession,
     doc_id: uuid.UUID,
-    user_id: uuid.UUID
+    user_id: uuid.UUID,
+    allow_guardian: bool = False
 ) -> Document:
     """
-    Retrieve document by id, raising 404 if not found and 403 if user is not the owner.
+    Retrieve document by id, raising 404 if not found and 403 if user is not the owner (or guardian if allowed).
     """
     query = select(Document).where(Document.id == doc_id)
     result = await db.execute(query)
@@ -153,6 +154,11 @@ async def get_document_by_id(
         )
         
     if doc.owner_id != user_id:
+        if allow_guardian:
+            from vaultpass_backend.repository.family import FamilyRepository
+            is_guardian = await FamilyRepository.check_is_guardian(db, guardian_id=user_id, dependent_id=doc.owner_id)
+            if is_guardian:
+                return doc
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this document"

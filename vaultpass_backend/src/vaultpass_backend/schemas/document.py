@@ -31,6 +31,7 @@ class DocumentCreateResponse(BaseModel):
     uploaded_at: datetime
     created_at: datetime
     updated_at: Optional[datetime] = None
+    permission_source: Optional[str] = None
 
     model_config = {
         "from_attributes": True

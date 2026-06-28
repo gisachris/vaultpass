@@ -101,6 +101,7 @@ class DashboardService:
     async def _get_summary(db: AsyncSession, user_id: uuid.UUID) -> SummaryResponse:
         """Fetch the summary card counts concurrently."""
         from vaultpass_backend.services.notification import NotificationService
+        from vaultpass_backend.services.family import asyncio_gather_summary_counts
 
         (
             total_documents,
@@ -110,6 +111,7 @@ class DashboardService:
             shared_with_me_count,
             documents_previewed_count,
             documents_downloaded_count,
+            family_counts,
         ) = await asyncio.gather(
             DashboardService._count_documents(db, user_id),
             DashboardService._count_trusted_contacts(db, user_id),
@@ -118,7 +120,10 @@ class DashboardService:
             DashboardService._count_received_shares(db, user_id),
             DashboardService._count_previews(db, user_id),
             DashboardService._count_downloads(db, user_id),
+            asyncio_gather_summary_counts(db, user_id)
         )
+
+        family_members, guardian_count, dependent_count, pending_invitations, accessible_docs = family_counts
 
         return SummaryResponse(
             total_documents=total_documents,
@@ -128,6 +133,10 @@ class DashboardService:
             shared_with_me_count=shared_with_me_count,
             documents_previewed_count=documents_previewed_count,
             documents_downloaded_count=documents_downloaded_count,
+            family_members_count=family_members,
+            dependents_count=dependent_count,
+            guardian_accessible_documents_count=accessible_docs,
+            pending_family_invitations_count=pending_invitations,
         )
 
     @staticmethod
