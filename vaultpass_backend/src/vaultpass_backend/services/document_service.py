@@ -68,7 +68,8 @@ async def upload_document(
     title: str,
     document_type: DocumentType,
     description: Optional[str] = None,
-    expiry_date: Optional[datetime] = None
+    expiry_date: Optional[datetime] = None,
+    guardian_visibility: bool = True
 ) -> Document:
     """
     Upload file to storage, insert metadata to database, and return the document.
@@ -97,7 +98,8 @@ async def upload_document(
         file_path=file_path,
         file_size=file_size,
         mime_type=file.content_type,
-        expiry_date=expiry_date
+        expiry_date=expiry_date,
+        guardian_visibility=guardian_visibility
     )
     
     try:
@@ -154,7 +156,7 @@ async def get_document_by_id(
         )
         
     if doc.owner_id != user_id:
-        if allow_guardian:
+        if allow_guardian and doc.guardian_visibility:
             from vaultpass_backend.repository.family import FamilyRepository
             is_guardian = await FamilyRepository.check_is_guardian(db, guardian_id=user_id, dependent_id=doc.owner_id)
             if is_guardian:
@@ -250,6 +252,27 @@ async def update_document(
         doc.expiry_date = update_data.expiry_date
     if update_data.document_type is not None:
         doc.document_type = update_data.document_type
+    if update_data.guardian_visibility is not None:
+        if doc.owner_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to modify guardian visibility"
+            )
+        old_vis = doc.guardian_visibility
+        doc.guardian_visibility = update_data.guardian_visibility
+        if old_vis != update_data.guardian_visibility:
+            from vaultpass_backend.core import constants
+            from vaultpass_backend.services.audit_service import AuditService
+            action = constants.DOCUMENT_VISIBILITY_ENABLED if update_data.guardian_visibility else constants.DOCUMENT_VISIBILITY_DISABLED
+            desc = f"Guardian visibility enabled for document '{doc.title}'." if update_data.guardian_visibility else f"Guardian visibility disabled for document '{doc.title}'."
+            await AuditService.log_action(
+                db=db,
+                user_id=user_id,
+                action=action,
+                entity_type="DOCUMENT",
+                entity_id=doc.id,
+                description=desc
+            )
         
     await db.commit()
     await db.refresh(doc)

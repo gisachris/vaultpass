@@ -277,14 +277,15 @@ class FamilyService:
         date_uploaded: Optional[str] = None,
         relationship: Optional[RelationshipType] = None
     ) -> List[DependentDocumentsResponse]:
-        # Formulate query to fetch documents where owner is dependent of guardian
+        # Formulate query to fetch documents where owner is dependent of guardian and they are visible
         stmt = (
             select(Document, FamilyRelationship, User)
             .join(FamilyRelationship, FamilyRelationship.dependent_id == Document.owner_id)
             .join(User, User.id == Document.owner_id)
             .where(
                 FamilyRelationship.guardian_id == guardian_id,
-                FamilyRelationship.status == RelationshipStatus.ACCEPTED
+                FamilyRelationship.status == RelationshipStatus.ACCEPTED,
+                Document.guardian_visibility == True
             )
         )
 
@@ -346,12 +347,15 @@ async def asyncio_gather_summary_counts(db: AsyncSession, user_id: uuid.UUID) ->
     ]
     results = await asyncio.gather(*tasks)
     
-    # Calculate accessible documents count for the guardian
+    # Calculate accessible documents count for the guardian (only visible ones)
     dependents = await FamilyRepository.get_dependents_for_guardian(db, user_id)
     dep_ids = [d.dependent_id for d in dependents]
     doc_count = 0
     if dep_ids:
-        doc_count_stmt = select(func.count()).select_from(Document).where(Document.owner_id.in_(dep_ids))
+        doc_count_stmt = select(func.count()).select_from(Document).where(
+            Document.owner_id.in_(dep_ids),
+            Document.guardian_visibility == True
+        )
         doc_count_res = await db.execute(doc_count_stmt)
         doc_count = doc_count_res.scalar() or 0
 

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, List
-from sqlalchemy import String, Text, DateTime, ForeignKey, Enum as SQLEnum, func
+from sqlalchemy import String, Text, DateTime, ForeignKey, Enum as SQLEnum, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from vaultpass_backend.database.connection import Base
 
@@ -69,6 +69,12 @@ class Document(Base):
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+        nullable=False
+    )
+    guardian_visibility: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        server_default="true",
         nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(

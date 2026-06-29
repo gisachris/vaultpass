@@ -50,10 +50,11 @@ class DocumentAccessService:
             return doc, None
 
         # 2. Guardian check (before document sharing check)
-        from vaultpass_backend.repository.family import FamilyRepository
-        is_guardian = await FamilyRepository.check_is_guardian(db, guardian_id=requesting_user_id, dependent_id=doc.owner_id)
-        if is_guardian:
-            return doc, None
+        if doc.guardian_visibility:
+            from vaultpass_backend.repository.family import FamilyRepository
+            is_guardian = await FamilyRepository.check_is_guardian(db, guardian_id=requesting_user_id, dependent_id=doc.owner_id)
+            if is_guardian:
+                return doc, None
 
         # 3. Share check
         share_query = select(DocumentShare).where(

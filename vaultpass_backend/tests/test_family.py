@@ -399,3 +399,34 @@ def test_guardian_cannot_modify_document(override_guardian_auth, mock_user_guard
         # Should return 403 because update check passes allow_guardian=False to get_document_by_id
         assert response.status_code == status.HTTP_403_FORBIDDEN
         app.dependency_overrides.pop(get_db, None)
+
+@patch("vaultpass_backend.repository.family.FamilyRepository.check_is_guardian", new_callable=AsyncMock)
+def test_document_access_service_guardian_hidden_denied(mock_is_guardian, mock_user_guardian, mock_user_dependent):
+    from vaultpass_backend.services.document_access_service import DocumentAccessService
+    from fastapi import HTTPException
+    import asyncio
+
+    mock_is_guardian.return_value = True
+
+    doc_id = uuid.uuid4()
+    mock_doc = MagicMock(spec=Document)
+    mock_doc.id = doc_id
+    mock_doc.owner_id = mock_user_dependent.id
+    mock_doc.guardian_visibility = False # Hidden!
+
+    mock_db = AsyncMock()
+    mock_doc_result = MagicMock()
+    mock_doc_result.scalar_one_or_none.return_value = mock_doc
+    mock_share_result = MagicMock()
+    mock_share_result.scalar_one_or_none.return_value = None
+    mock_db.execute.side_effect = [mock_doc_result, mock_share_result]
+
+    async def run_test():
+        await DocumentAccessService.resolve_document_access(mock_db, doc_id, mock_user_guardian.id)
+
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(run_test())
+
+    assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+    assert "Not authorized" in exc_info.value.detail
+

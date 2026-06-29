@@ -40,6 +40,7 @@ async def upload(
     document_type: DocumentType = Form(..., description="Category type of the document"),
     description: Optional[str] = Form(None, description="Optional description"),
     expiry_date: Optional[datetime] = Form(None, description="Optional expiration date"),
+    guardian_visibility: bool = Form(True, description="Whether guardians may automatically access this document"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -57,7 +58,8 @@ async def upload(
         title=title,
         document_type=document_type,
         description=description,
-        expiry_date=expiry_date
+        expiry_date=expiry_date,
+        guardian_visibility=guardian_visibility
     )
     return DocumentCreateResponse.model_validate(doc)
 

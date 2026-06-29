@@ -13,6 +13,7 @@ class DocumentUpdateRequest(BaseModel):
     description: Optional[str] = Field(None, description="Optional description of the document")
     expiry_date: Optional[datetime] = Field(None, description="Optional expiration date of the document")
     document_type: Optional[DocumentType] = Field(None, description="Optional category of the document")
+    guardian_visibility: Optional[bool] = Field(None, description="Whether guardians may automatically access this document")
 
 class DocumentCreateResponse(BaseModel):
     """
@@ -32,6 +33,7 @@ class DocumentCreateResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     permission_source: Optional[str] = None
+    guardian_visibility: bool = True
 
     model_config = {
         "from_attributes": True
