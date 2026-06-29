@@ -1,0 +1,192 @@
+.family-hub-page {
+  display: flex;
+  min-height: 100vh;
+  background: #fbf9fa;
+}
+
+.family-hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.family-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.member-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.member-card:hover {
+  border-color: #2c3e5040;
+}
+
+.member-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.member-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #162839;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.member-role-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.member-role-badge.guardian {
+  background: #e1e3e4;
+  color: #5c5f60;
+}
+
+.member-role-badge.dependent {
+  background: #ffddb7;
+  color: #291802;
+}
+
+.member-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.member-detail-box {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.member-detail-label {
+  margin: 0 0 4px 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.member-detail-value {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.member-card-footer {
+  border-top: 1px solid #edf2f7;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.member-joined-date {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.chip-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.filter-chip {
+  padding: 6px 20px;
+  border-radius: 9999px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #efedef;
+  color: #43474c;
+  transition: all 0.2s;
+}
+
+.filter-chip:hover {
+  background: #e4e2e3;
+}
+
+.filter-chip.active {
+  background: #162839;
+  color: #ffffff;
+}
+
+.pending-invite-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.pending-invite-msg {
+  background: #FCFCFB;
+  border: 1px solid #e2e8f080;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #475569;
+  font-style: italic;
+}
+
+.add-member-dashed-card {
+  border: 2px dashed #cbd5e1;
+  border-radius: 1rem;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-member-dashed-card:hover {
+  border-color: #162839;
+  background: #ffffff50;
+}
+
+@media (max-width: 1200px) {
+  .family-hub-grid {
+    grid-template-columns: 1fr;
+  }
+}
