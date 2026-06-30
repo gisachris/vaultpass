@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VaultPass - Family Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#f2f0f2",
+                    "primary-container": "#2c3e50",
+                    "border-subtle": "#E2E8F0",
+                    "on-surface": "#1b1c1d",
+                    "tertiary-fixed-dim": "#e3c19b",
+                    "semantic-error": "#9B2226",
+                    "primary": "#162839",
+                    "surface-dim": "#dbd9db",
+                    "on-primary-fixed-variant": "#36485b",
+                    "semantic-warning": "#B58900",
+                    "inverse-surface": "#303032",
+                    "text-charcoal": "#1E293B",
+                    "surface-container": "#efedef",
+                    "on-secondary-fixed": "#191c1d",
+                    "surface": "#fbf9fa",
+                    "primary-fixed": "#d1e4fb",
+                    "on-primary-container": "#96a9be",
+                    "semantic-success": "#2D6A4F",
+                    "background": "#fbf9fa",
+                    "vault-deep-blue": "#2C3E50",
+                    "on-tertiary-fixed": "#291802",
+                    "inverse-primary": "#b5c8df",
+                    "on-secondary-container": "#626566",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#e1e3e4",
+                    "secondary": "#5c5f60",
+                    "on-tertiary-container": "#c1a17d",
+                    "tertiary-container": "#4e381c",
+                    "on-tertiary-fixed-variant": "#5a4225",
+                    "tertiary-fixed": "#ffddb7",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#e1e3e4",
+                    "on-background": "#1b1c1d",
+                    "outline": "#74777d",
+                    "surface-bright": "#fbf9fa",
+                    "surface-tint": "#4e6073",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#43474c",
+                    "vault-slate": "#475569",
+                    "surface-off-white": "#F8F9FA",
+                    "surface-warm-white": "#FCFCFB",
+                    "on-primary-fixed": "#091d2e",
+                    "surface-container-highest": "#e4e2e3",
+                    "surface-container-low": "#f5f3f4",
+                    "vault-muted-blue": "#64748B",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#e4e2e3",
+                    "primary-fixed-dim": "#b5c8df",
+                    "error": "#ba1a1a",
+                    "tertiary": "#362308",
+                    "secondary-fixed-dim": "#c5c7c8",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#c4c6cd",
+                    "surface-container-high": "#e9e8e9",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#454748"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "container-max": "1440px",
+                    "section-gap": "48px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "40px",
+                    "sidebar-width": "280px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Manrope"],
+                    "body-lg": ["Manrope"],
+                    "body-sm": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "headline-xl": ["Manrope"],
+                    "headline-lg": ["Manrope"],
+                    "label-md": ["Manrope"],
+                    "headline-md": ["Manrope"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-xl": ["32px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #fbf9fa;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .shadow-soft {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+        .sidebar-active {
+            background-color: #2c3e50;
+            color: #96a9be;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e1e3e4;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-x-hidden">
+<!-- SideNavBar (Fixed) -->
+<nav class="fixed left-0 top-0 h-screen w-sidebar-width flex flex-col p-6 z-50 bg-surface-container-low border-r border-border-subtle">
+<div class="mb-8 px-2">
+<h1 class="font-headline-md text-headline-md text-primary">VaultPass</h1>
+<p class="font-label-md text-label-md text-on-surface-variant opacity-70">Secure Workspace</p>
+</div>
+<button class="mb-8 w-full py-3 px-4 bg-primary text-on-primary rounded-lg font-body-md flex items-center justify-center gap-2 hover:opacity-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+            New Document
+        </button>
+<div class="flex-grow space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">description</span>
+                Documents
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-on-primary-container font-bold font-label-md" href="#">
+<span class="material-symbols-outlined">group</span>
+                Trusted Contacts
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">share_reviews</span>
+                Shared Access
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                Notifications
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</div>
+<div class="pt-6 border-t border-border-subtle space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">help</span>
+                Help Center
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-md" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Sign Out
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-sidebar-width min-h-screen">
+<!-- TopNavBar (Sticky) -->
+<header class="sticky top-0 z-40 flex items-center justify-between px-margin-desktop h-16 w-full bg-surface border-b border-border-subtle shadow-sm">
+<div class="flex items-center gap-4 flex-grow max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary/20 text-body-sm" placeholder="Search family members..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-semantic-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="p-margin-desktop max-w-container-max mx-auto">
+<!-- Page Header -->
+<div class="mb-10">
+<h2 class="font-display-lg text-display-lg text-primary mb-2">Family Hub</h2>
+<p class="font-body-lg text-body-lg text-vault-slate">Manage family relationships, guardians, dependents, and document guardianship.</p>
+</div>
+<!-- Summary Cards Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-section-gap">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft flex items-center gap-4 group hover:border-primary/20 transition-all">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">family_history</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Family Members</p>
+<h4 class="font-headline-lg text-headline-lg text-primary">08</h4>
+<p class="text-[10px] text-semantic-success font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> Active
+                        </p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft flex items-center gap-4 group hover:border-primary/20 transition-all">
+<div class="w-12 h-12 rounded-lg bg-tertiary/5 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">child_care</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Dependents</p>
+<h4 class="font-headline-lg text-headline-lg text-primary">03</h4>
+<p class="text-[10px] text-vault-muted-blue font-bold">Managed Assets</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft flex items-center gap-4 group hover:border-primary/20 transition-all">
+<div class="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">gavel</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Guardians</p>
+<h4 class="font-headline-lg text-headline-lg text-primary">02</h4>
+<p class="text-[10px] text-vault-muted-blue font-bold">Verified Access</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft flex items-center gap-4 group hover:border-primary/20 transition-all">
+<div class="w-12 h-12 rounded-lg bg-semantic-warning/10 flex items-center justify-center text-semantic-warning">
+<span class="material-symbols-outlined">forward_to_inbox</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Pending</p>
+<h4 class="font-headline-lg text-headline-lg text-primary">05</h4>
+<p class="text-[10px] text-semantic-warning font-bold">Awaiting Action</p>
+</div>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex items-center gap-3 mb-8">
+<button class="px-5 py-1.5 rounded-full bg-primary text-on-primary font-label-md">All</button>
+<button class="px-5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-border-subtle transition-all font-label-md">Guardians</button>
+<button class="px-5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-border-subtle transition-all font-label-md">Dependents</button>
+<button class="px-5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-border-subtle transition-all font-label-md">Pending</button>
+</div>
+<!-- Main Grid: Left (Your Family) & Right (Pending) -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-gutter mb-section-gap">
+<!-- Left Column (3:1 Ratio Part 1) -->
+<div class="lg:col-span-3 space-y-gutter">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-lg text-headline-lg text-primary">Your Family</h3>
+<button class="text-primary font-label-md flex items-center gap-1 hover:underline">
+                            Invite Member <span class="material-symbols-outlined text-[18px]">add_circle</span>
+</button>
+</div>
+<!-- Family Member Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Card: Sarah Jenkins -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft group hover:border-primary/10 transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/10 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged woman with a friendly expression. She is wearing a soft grey blazer in a clean, brightly lit modern home office environment. The image is captured in high-definition with a shallow depth of field, emphasizing a soft, trustworthy, and premium aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9CUtN4U0XGXpXRt9jn0YG0z7h8rRaQil16T2ybkT65MSt11hmXoOEtTnnoDXtQ3q8BbmacScnxu9s1RmBjmZeElhXxRgRk9L3hr5K68ibbVTW7qIKKU1FFRksvr2yrBMbTdoYJUbkzwcbvYzWEU2WPgOGAmOqMKiHp7HJi25RUGUfhgvpGf59tWEQkmZRJPQO7L-HecB2X_yh4xI1zh4DM5uVr53KLvFj6DtaMLg_3QHMCzE14SzMmLncV3qj69xY-OOBduqTRAxu"/>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-primary">Sarah Jenkins</h4>
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase">Parent / Guardian</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-1 transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Status</p>
+<p class="font-body-md text-body-md text-semantic-success flex items-center gap-1">Active <span class="w-1.5 h-1.5 rounded-full bg-semantic-success"></span></p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Documents</p>
+<p class="font-body-md text-body-md text-primary">24 Shared</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<p class="text-[11px] text-vault-slate">Joined Mar 12, 2021</p>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-[11px] font-bold bg-primary text-on-primary rounded-lg hover:opacity-90">Manage</button>
+<button class="px-3 py-1.5 text-[11px] font-bold border border-border-subtle text-vault-slate rounded-lg hover:bg-surface-container">Profile</button>
+</div>
+</div>
+</div>
+<!-- Card: David Jenkins -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft group hover:border-primary/10 transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/10 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A portrait of an elderly man with silver hair and a kind, serene face. He is wearing a dark navy knit sweater. The setting is a minimalist library with soft, warm afternoon sunlight coming through a large window, creating a peaceful and secure atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdLctDd_zQWOFRgOm_YbkbSJ4R0pIqV4ELXeCrz2zD0duK-qLMCOXJ6zGjNIr12RsVngDxmTFyjhbpkRkAIvFhtKOjgvEBZPnBD6LCj3gee-CCTts3k3-tMQklPVzbLD626nKrp2I2o8Tt_gW_qqujOYUWJBPrNXcMsJ0GNV6ION9e8BZQMAVwcjqeZsvNdsAYjVv92Ug_bI8XBgFj1QsF3jZ4Ygt9kG53D-jBJN1xbwEQpFJ59lGIUq6AK5gjbYBhD2bt4LiecgIR"/>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-primary">David Jenkins</h4>
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold uppercase">Dependent</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-1 transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Status</p>
+<p class="font-body-md text-body-md text-primary flex items-center gap-1">Managed Assets</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Documents</p>
+<p class="font-body-md text-body-md text-primary">08 Access</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<p class="text-[11px] text-vault-slate">Joined Aug 05, 2022</p>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-[11px] font-bold bg-primary text-on-primary rounded-lg hover:opacity-90">Manage</button>
+<button class="px-3 py-1.5 text-[11px] font-bold border border-border-subtle text-vault-slate rounded-lg hover:bg-surface-container">Profile</button>
+</div>
+</div>
+</div>
+<!-- Card: Emily Jenkins -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft group hover:border-primary/10 transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/10 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A portrait of a young girl with a cheerful smile, wearing a simple white t-shirt. The background is a soft-focus garden with lush greenery and soft bokeh. The lighting is natural and bright, conveying a sense of safety and family protection in a modern, professional photographic style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGznbcCMNO6keKtslECyaIuE_Bb9f51P1XG7v-JOnbPM_VZ7FAInfueiRnEc3TJIquWVwc-J4o8tMr9ixbflr3e9ZDWYHdR68CgOU9w5gjZqmUG-XpDqDk_yUduWA6rnAycdiPVz_5zNR8Qm644efKydqf0wG_aufR67LtPY8IcyN7qLq_ms17nr498piJ0_m4CWG2QHby9iae_CvijRUCBdz1Zpk9bicwr-1Q5YcVqmG-Sd3o7T9lxm4PzrI7cWuDLL8Hp-qZSnqE"/>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-primary">Emily Jenkins</h4>
+<span class="px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant text-[10px] font-bold uppercase">Child</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container rounded-full p-1 transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Status</p>
+<p class="font-body-md text-body-md text-vault-muted-blue flex items-center gap-1">Minor Dependent</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Documents</p>
+<p class="font-body-md text-body-md text-primary">12 Protected</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<p class="text-[11px] text-vault-slate">Joined Jan 20, 2023</p>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-[11px] font-bold bg-primary text-on-primary rounded-lg hover:opacity-90">Manage</button>
+<button class="px-3 py-1.5 text-[11px] font-bold border border-border-subtle text-vault-slate rounded-lg hover:bg-surface-container">Profile</button>
+</div>
+</div>
+</div>
+<!-- Card: Legal Entity (Trust) -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-soft group hover:border-primary/10 transition-all border-dashed">
+<div class="h-full flex flex-col items-center justify-center py-8 text-center">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-vault-muted-blue mb-4">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-vault-slate mb-1">Add Member</h4>
+<p class="font-body-sm text-body-sm text-vault-muted-blue max-w-[200px]">Expand your family vault and assign roles.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (Pending Invitations) -->
+<div class="lg:col-span-1 space-y-6">
+<h3 class="font-headline-lg text-headline-lg text-primary">Pending</h3>
+<!-- Pending Item 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-border-subtle shadow-soft flex flex-col gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[14px] font-bold">MK</div>
+<div>
+<h5 class="font-label-md text-label-md text-primary">Marcus King</h5>
+<p class="text-[10px] text-vault-muted-blue">Guardian Request</p>
+</div>
+</div>
+<div class="p-3 bg-surface-warm-white rounded-lg border border-border-subtle/50 italic text-[11px] text-vault-slate">
+                            "I'd like to help manage the family trust documents."
+                        </div>
+<div class="flex gap-2">
+<button class="flex-1 py-1.5 text-[11px] font-bold bg-primary text-on-primary rounded hover:opacity-90 transition-all">Accept</button>
+<button class="flex-1 py-1.5 text-[11px] font-bold bg-surface-container text-on-surface-variant rounded hover:bg-border-subtle transition-all">Decline</button>
+</div>
+<p class="text-[9px] text-on-surface-variant opacity-60 text-right">Sent 2 days ago</p>
+</div>
+<!-- Pending Item 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-border-subtle shadow-soft flex flex-col gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container/50 flex items-center justify-center text-on-secondary-container text-[14px] font-bold">AL</div>
+<div>
+<h5 class="font-label-md text-label-md text-primary">Anne Litton</h5>
+<p class="text-[10px] text-vault-muted-blue">Relationship Update</p>
+</div>
+</div>
+<div class="p-3 bg-surface-warm-white rounded-lg border border-border-subtle/50 italic text-[11px] text-vault-slate">
+                            "Setting up the secondary guardian access."
+                        </div>
+<div class="flex gap-2">
+<button class="flex-1 py-1.5 text-[11px] font-bold bg-primary text-on-primary rounded hover:opacity-90 transition-all">Accept</button>
+<button class="flex-1 py-1.5 text-[11px] font-bold bg-surface-container text-on-surface-variant rounded hover:bg-border-subtle transition-all">Decline</button>
+</div>
+<p class="text-[9px] text-on-surface-variant opacity-60 text-right">Sent Yesterday</p>
+</div>
+<!-- CTA Mini Card -->
+<div class="bg-primary p-6 rounded-xl text-on-primary shadow-lg overflow-hidden relative group">
+<div class="relative z-10">
+<h4 class="font-headline-md text-headline-md mb-2">Security Check</h4>
+<p class="text-[11px] opacity-80 mb-4 leading-relaxed">Ensure all guardians have updated their emergency contact info.</p>
+<button class="w-full py-2 bg-on-primary text-primary font-bold rounded-lg text-[11px] hover:bg-primary-container hover:text-on-primary-container transition-all">Run Audit</button>
+</div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[100px] opacity-10 rotate-12 group-hover:rotate-0 transition-transform">verified_user</span>
+</div>
+</div>
+</div>
+<!-- Activity Preview (Bottom Section) -->
+<div class="bg-surface-container-lowest rounded-xl border border-border-subtle shadow-soft p-gutter">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-headline-md text-primary">Recent Activity</h3>
+<button class="text-primary font-label-md hover:underline">View Full Logs</button>
+</div>
+<div class="space-y-6">
+<!-- Activity Item 1 -->
+<div class="flex items-start gap-4">
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-semantic-success/10 flex items-center justify-center text-semantic-success">
+<span class="material-symbols-outlined text-[20px]">assignment_ind</span>
+</div>
+<div class="absolute top-10 left-1/2 -translate-x-1/2 w-[1px] h-6 bg-border-subtle"></div>
+</div>
+<div class="flex-grow pt-1">
+<div class="flex items-center justify-between">
+<p class="font-body-md text-body-md text-primary"><span class="font-bold">Sarah Jenkins</span> verified her identity as a primary guardian.</p>
+<span class="font-label-md text-label-md text-vault-slate opacity-60">2 hours ago</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mt-1">Biometric verification completed via mobile app.</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="flex items-start gap-4">
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</div>
+<div class="absolute top-10 left-1/2 -translate-x-1/2 w-[1px] h-6 bg-border-subtle"></div>
+</div>
+<div class="flex-grow pt-1">
+<div class="flex items-center justify-between">
+<p class="font-body-md text-body-md text-primary"><span class="font-bold">You</span> shared "Life Insurance Policy #44" with <span class="font-bold">Marcus King</span>.</p>
+<span class="font-label-md text-label-md text-vault-slate opacity-60">5 hours ago</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mt-1">Access level: View Only.</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-semantic-warning/10 flex items-center justify-center text-semantic-warning">
+<span class="material-symbols-outlined text-[20px]">edit_document</span>
+</div>
+<div class="flex-grow pt-1">
+<div class="flex items-center justify-between">
+<p class="font-body-md text-body-md text-primary">Relationship role for <span class="font-bold">David Jenkins</span> was updated.</p>
+<span class="font-label-md text-label-md text-vault-slate opacity-60">Yesterday</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mt-1">Changed from "Guest" to "Dependent (Full Access)".</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple Micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.style.transform = 'scale(0.98)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            });
+        });
+
+        // Search Bar Focus Effect
+        const searchInput = document.querySelector('input[type="text"]');
+        const searchIcon = searchInput?.previousElementSibling;
+        searchInput?.addEventListener('focus', () => {
+            searchIcon.style.color = '#162839';
+        });
+        searchInput?.addEventListener('blur', () => {
+            searchIcon.style.color = '#43474c';
+        });
+    </script>
+</body></html>

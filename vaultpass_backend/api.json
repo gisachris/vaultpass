@@ -1408,6 +1408,192 @@
           }
         }
       ]
+    },
+    {
+      "name": "Family Hub",
+      "base_path": "/api/family",
+      "description": "Provides guardianship management, family member lists, summary cards, and dependent-grouped document queries.",
+      "authentication": "Bearer JWT required",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/invitations",
+          "summary": "Create a family invitation",
+          "description": "Send a family/guardianship invitation to a registered active user by email. Prevents duplicate, self, and circular invitations.",
+          "request_body": {
+            "email": {
+              "type": "string",
+              "required": true,
+              "format": "email",
+              "description": "Email address of the invited user"
+            },
+            "relationship": {
+              "type": "string",
+              "required": true,
+              "enum": ["SPOUSE", "PARENT", "CHILD", "SIBLING", "PARTNER", "OTHER"],
+              "description": "The relationship type"
+            },
+            "notes": {
+              "type": "string",
+              "required": false,
+              "max_length": 500,
+              "description": "Optional notes for the invitation"
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created successfully"
+            },
+            "400": {
+              "description": "Bad Request (e.g. self-invitation, circular relationship, or duplicate)"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/invitations/sent",
+          "summary": "List sent invitations",
+          "description": "Retrieve all family invitations sent by the authenticated user.",
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/invitations/received",
+          "summary": "List received invitations",
+          "description": "Retrieve all family invitations received by the authenticated user.",
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/invitations/{id}/accept",
+          "summary": "Accept family invitation",
+          "description": "Accept a pending family invitation received by the authenticated user.",
+          "path_parameters": {
+            "id": {
+              "type": "uuid",
+              "required": true,
+              "description": "The ID of the family relationship/invitation record"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "404": {
+              "description": "Not Found"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/invitations/{id}/decline",
+          "summary": "Decline family invitation",
+          "description": "Decline a pending family invitation received by the authenticated user.",
+          "path_parameters": {
+            "id": {
+              "type": "uuid",
+              "required": true,
+              "description": "The ID of the family relationship/invitation record"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "404": {
+              "description": "Not Found"
+            }
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/{relationshipId}",
+          "summary": "Remove family relationship",
+          "description": "Remove or revoke an active or pending family relationship between the authenticated user and another member.",
+          "path_parameters": {
+            "relationshipId": {
+              "type": "uuid",
+              "required": true,
+              "description": "The ID of the family relationship"
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "404": {
+              "description": "Not Found"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/",
+          "summary": "List family relationships",
+          "description": "Retrieve all active family relationships for the authenticated user.",
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/documents",
+          "summary": "List family documents",
+          "description": "Retrieve dependent documents accessible to the authenticated user (acting as a guardian). Automatically filters out documents with guardian_visibility = False.",
+          "query_parameters": {
+            "page": {
+              "type": "integer",
+              "default": 1
+            },
+            "limit": {
+              "type": "integer",
+              "default": 10
+            },
+            "search": {
+              "type": "string",
+              "required": false
+            },
+            "category": {
+              "type": "string",
+              "required": false
+            },
+            "dependent_name": {
+              "type": "string",
+              "required": false
+            },
+            "relationship": {
+              "type": "string",
+              "required": false
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/summary",
+          "summary": "Get family hub summary metrics",
+          "description": "Returns counts of family members, guardians, dependents, pending invitations, and accessible dependent documents.",
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          }
+        }
+      ]
     }
   ]
 }

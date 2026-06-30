@@ -9,6 +9,7 @@ import { SharedAccessPage } from '../pages/SharedAccessPage';
 import { SharedDocumentView } from '../pages/SharedDocumentView';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ReceivedDocumentsPage } from '../pages/ReceivedDocumentsPage';
+import { FamilyHubPage } from '../features/family/pages/FamilyHubPage';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -58,6 +59,7 @@ export function AppRoutes() {
       <Route path="/dashboard"          element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/documents"          element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
       <Route path="/trusted-contacts"   element={<ProtectedRoute><TrustedContactsPage /></ProtectedRoute>} />
+      <Route path="/family"             element={<ProtectedRoute><FamilyHubPage /></ProtectedRoute>} />
       <Route path="/shared-access"      element={<ProtectedRoute><SharedAccessPage /></ProtectedRoute>} />
       <Route path="/received-documents" element={<ProtectedRoute><ReceivedDocumentsPage /></ProtectedRoute>} />
       <Route path="/notifications"      element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />

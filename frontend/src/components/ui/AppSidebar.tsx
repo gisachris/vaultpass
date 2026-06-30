@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' },
   { to: '/documents', label: 'Documents', icon: 'description' },
   { to: '/trusted-contacts', label: 'Trusted Contacts', icon: 'group' },
+  { to: '/family', label: 'Family Hub', icon: 'groups' },
   { to: '/shared-access', label: 'Shared Access', icon: 'share' },
   { to: '/received-documents', label: 'Received Documents', icon: 'inbox' },
   { to: '/notifications', label: 'Notifications', icon: 'notifications' },

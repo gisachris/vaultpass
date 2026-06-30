@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from vaultpass_backend.models.document_share import DocumentShare
     from vaultpass_backend.models.notification import Notification
     from vaultpass_backend.models.settings import UserSettings
+    from vaultpass_backend.models.family_relationship import FamilyRelationship
 
 class User(Base):
     """
@@ -94,6 +95,16 @@ class User(Base):
     notifications: Mapped[List["Notification"]] = relationship(
         "Notification",
         back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    family_guardians: Mapped[List["FamilyRelationship"]] = relationship(
+        "FamilyRelationship",
+        foreign_keys="FamilyRelationship.dependent_id",
+        cascade="all, delete-orphan"
+    )
+    family_dependents: Mapped[List["FamilyRelationship"]] = relationship(
+        "FamilyRelationship",
+        foreign_keys="FamilyRelationship.guardian_id",
         cascade="all, delete-orphan"
     )
 

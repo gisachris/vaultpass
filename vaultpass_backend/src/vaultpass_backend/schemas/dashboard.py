@@ -13,6 +13,10 @@ class SummaryResponse(BaseModel):
     shared_with_me_count: int
     documents_previewed_count: int = 0
     documents_downloaded_count: int = 0
+    family_members_count: int = 0
+    dependents_count: int = 0
+    guardian_accessible_documents_count: int = 0
+    pending_family_invitations_count: int = 0
 
 
 class DocumentHealthResponse(BaseModel):

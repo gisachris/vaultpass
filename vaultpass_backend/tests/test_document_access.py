@@ -45,7 +45,9 @@ def test_service_resolve_document_access_owner(mock_user):
     assert res_doc == doc
     assert share is None
 
-def test_service_resolve_document_access_share(mock_user):
+@patch("vaultpass_backend.repository.family.FamilyRepository.check_is_guardian", new_callable=AsyncMock)
+def test_service_resolve_document_access_share(mock_check_guardian, mock_user):
+    mock_check_guardian.return_value = False
     doc_id = uuid.uuid4()
     recipient_id = uuid.uuid4()
     doc = Document(id=doc_id, owner_id=mock_user.id, title="Test Doc")
@@ -76,8 +78,10 @@ def test_service_resolve_document_access_share(mock_user):
     assert res_doc == doc
     assert res_share == share
 
-def test_service_resolve_document_access_expired(mock_user):
+@patch("vaultpass_backend.repository.family.FamilyRepository.check_is_guardian", new_callable=AsyncMock)
+def test_service_resolve_document_access_expired(mock_check_guardian, mock_user):
     from fastapi import HTTPException
+    mock_check_guardian.return_value = False
     doc_id = uuid.uuid4()
     recipient_id = uuid.uuid4()
     doc = Document(id=doc_id, owner_id=mock_user.id, title="Test Doc")
