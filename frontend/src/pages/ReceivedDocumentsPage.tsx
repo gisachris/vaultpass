@@ -8,6 +8,8 @@ import { DocumentPreviewModal } from '../components/documents/DocumentPreviewMod
 import { fetchReceivedShares, fetchReceivedShareDetail } from '../services/sharedDocumentsService';
 import { downloadDocumentUrl, triggerFileDownload } from '../services/documentService';
 import { ACCESS_LEVEL_LABELS } from '../services/documentShareService';
+import { fetchGuardianDocuments } from '../features/family/api/familyService';
+import type { DependentDocuments } from '../features/family/types';
 import type { ReceivedShare, ReceivedShareDetail } from '../types/receivedDocuments';
 import './ReceivedDocumentsPage.css';
 
@@ -34,6 +36,8 @@ export function ReceivedDocumentsPage() {
   const navigate = useNavigate();
 
   const [shares, setShares] = useState<ReceivedShare[]>([]);
+  const [familyDocs, setFamilyDocs] = useState<DependentDocuments[]>([]);
+  const [activeTab, setActiveTab] = useState<'shares' | 'family'>('shares');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -57,9 +61,13 @@ export function ReceivedDocumentsPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchReceivedShares();
-      setShares(data);
-    } catch {
+      const [sharesData, familyData] = await Promise.all([
+        fetchReceivedShares(),
+        fetchGuardianDocuments()
+      ]);
+      setShares(sharesData);
+      setFamilyDocs(familyData);
+    } catch (err) {
       setError('Failed to load received documents.');
     } finally {
       setLoading(false);
@@ -127,12 +135,52 @@ export function ReceivedDocumentsPage() {
         <header className="received-topbar">
           <div>
             <h1 className="received-topbar__title">Received Documents</h1>
-            <p className="received-topbar__sub">Documents shared with you by trusted contacts</p>
+            <p className="received-topbar__sub">Documents shared with you by trusted contacts and family members</p>
           </div>
           <UserProfileMenu variant="topbar" />
         </header>
 
         <main className="received-canvas">
+          {/* Tab Switcher */}
+          {familyDocs.length > 0 && (
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('shares')}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backgroundColor: activeTab === 'shares' ? '#162839' : '#efedef',
+                  color: activeTab === 'shares' ? '#ffffff' : '#43474c',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Direct Shares
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('family')}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backgroundColor: activeTab === 'family' ? '#162839' : '#efedef',
+                  color: activeTab === 'family' ? '#ffffff' : '#43474c',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Family Vault
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div className="received-loading">
               <div className="spinner" />
@@ -146,84 +194,212 @@ export function ReceivedDocumentsPage() {
                 Try Again
               </button>
             </div>
-          ) : shares.length === 0 ? (
-            <div className="received-empty">
-              <span className="material-symbols-outlined">inbox</span>
-              <h2>No documents shared with you yet</h2>
-              <p>When someone shares a document with you, it will appear here.</p>
-            </div>
-          ) : (
-            <div className="received-grid">
-              {shares.map((share) => {
-                const expired = share.expires_at
-                  ? new Date(share.expires_at) < new Date()
-                  : false;
-                const statusText = !share.is_active ? 'Revoked' : expired ? 'Expired' : 'Active';
-                const statusClass = !share.is_active
-                  ? 'badge--revoked'
-                  : expired
-                  ? 'badge--expired'
-                  : 'badge--active';
+          ) : activeTab === 'shares' ? (
+            shares.length === 0 ? (
+              <div className="received-empty">
+                <span className="material-symbols-outlined">inbox</span>
+                <h2>No documents shared with you yet</h2>
+                <p>When someone shares a document with you, it will appear here.</p>
+              </div>
+            ) : (
+              <div className="received-grid">
+                {shares.map((share) => {
+                  const expired = share.expires_at
+                    ? new Date(share.expires_at) < new Date()
+                    : false;
+                  const statusText = !share.is_active ? 'Revoked' : expired ? 'Expired' : 'Active';
+                  const statusClass = !share.is_active
+                    ? 'badge--revoked'
+                    : expired
+                    ? 'badge--expired'
+                    : 'badge--active';
 
-                return (
-                  <div
-                    key={share.share_id}
-                    className="received-card"
-                    onClick={() => openDetail(share.share_id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && openDetail(share.share_id)}
-                  >
-                    <div className="received-card__icon">
-                      <span className="material-symbols-outlined">
-                        {docTypeIcon(share.document_type)}
-                      </span>
-                    </div>
-
-                    <div className="received-card__body">
-                      <h3 className="received-card__title">{share.document_title}</h3>
-
-                      <div className="received-card__meta">
-                        <span className="received-card__meta-item">
-                          <span className="material-symbols-outlined">person</span>
-                          {share.owner_name}
-                        </span>
-                        <span className="received-card__meta-item">
-                          <span className="material-symbols-outlined">calendar_today</span>
-                          {formatDate(share.shared_at)}
-                        </span>
-                        {share.expires_at && (
-                          <span className="received-card__meta-item">
-                            <span className="material-symbols-outlined">schedule</span>
-                            Expires {formatDate(share.expires_at)}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="received-card__footer">
-                        <span className={`received-badge ${statusClass}`}>{statusText}</span>
-                        <span className={`perm-badge perm-badge--${(share.access_level || 'view').replace('_', '-')}`}>
-                          {ACCESS_LEVEL_LABELS[share.access_level || 'view']}
-                        </span>
-                        <span className="received-card__type">{share.document_type}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="received-card__view-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDetail(share.share_id);
-                      }}
+                  return (
+                    <div
+                      key={share.share_id}
+                      className="received-card"
+                      onClick={() => openDetail(share.share_id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && openDetail(share.share_id)}
                     >
-                      <span className="material-symbols-outlined">open_in_new</span>
-                      View
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                      <div className="received-card__icon">
+                        <span className="material-symbols-outlined">
+                          {docTypeIcon(share.document_type)}
+                        </span>
+                      </div>
+
+                      <div className="received-card__body">
+                        <h3 className="received-card__title">{share.document_title}</h3>
+
+                        <div className="received-card__meta">
+                          <span className="received-card__meta-item">
+                            <span className="material-symbols-outlined">person</span>
+                            {share.owner_name}
+                          </span>
+                          <span className="received-card__meta-item">
+                            <span className="material-symbols-outlined">calendar_today</span>
+                            {formatDate(share.shared_at)}
+                          </span>
+                          {share.expires_at && (
+                            <span className="received-card__meta-item">
+                              <span className="material-symbols-outlined">schedule</span>
+                              Expires {formatDate(share.expires_at)}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="received-card__footer">
+                          <span className={`received-badge ${statusClass}`}>{statusText}</span>
+                          <span className={`perm-badge perm-badge--${(share.access_level || 'view').replace('_', '-')}`}>
+                            {ACCESS_LEVEL_LABELS[share.access_level || 'view']}
+                          </span>
+                          <span className="received-card__type">{share.document_type}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="received-card__view-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(share.share_id);
+                        }}
+                      >
+                        <span className="material-symbols-outlined">open_in_new</span>
+                        View
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : (
+            familyDocs.length === 0 || familyDocs.every((f) => f.documents.length === 0) ? (
+              <div className="received-empty">
+                <span className="material-symbols-outlined">group</span>
+                <h2>No family documents accessible yet</h2>
+                <p>When family members make documents visible to their guardians, they will appear here.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                {familyDocs.map((dep) => {
+                  if (dep.documents.length === 0) return null;
+                  return (
+                    <div key={dep.dependent_id}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#162839', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="material-symbols-outlined">child_care</span>
+                        {dep.dependent_name} ({dep.relationship === 'PARENT' ? 'child' : dep.relationship === 'CHILD' ? 'parent' : dep.relationship.toLowerCase()})
+                      </h3>
+                      <div className="received-grid">
+                        {dep.documents.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="received-card"
+                            onClick={() => {
+                              setSelectedShare({
+                                share_id: doc.id,
+                                owner_id: '',
+                                contact_id: '',
+                                document_id: doc.id,
+                                document_title: doc.title,
+                                document_type: doc.document_type,
+                                owner_name: dep.dependent_name,
+                                shared_at: doc.created_at,
+                                expires_at: doc.expiry_date || null,
+                                is_active: true,
+                                last_accessed_at: null,
+                                allow_download: true,
+                                access_level: 'view_download'
+                              });
+                              setModalOpen(true);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                setSelectedShare({
+                                  share_id: doc.id,
+                                  owner_id: '',
+                                  contact_id: '',
+                                  document_id: doc.id,
+                                  document_title: doc.title,
+                                  document_type: doc.document_type,
+                                  owner_name: dep.dependent_name,
+                                  shared_at: doc.created_at,
+                                  expires_at: doc.expiry_date || null,
+                                  is_active: true,
+                                  last_accessed_at: null,
+                                  allow_download: true,
+                                  access_level: 'view_download'
+                                });
+                                setModalOpen(true);
+                              }
+                            }}
+                          >
+                            <div className="received-card__icon">
+                              <span className="material-symbols-outlined">
+                                {docTypeIcon(doc.document_type)}
+                              </span>
+                            </div>
+
+                            <div className="received-card__body">
+                              <h3 className="received-card__title">{doc.title}</h3>
+
+                              <div className="received-card__meta">
+                                <span className="received-card__meta-item">
+                                  <span className="material-symbols-outlined">person</span>
+                                  {dep.dependent_name}
+                                </span>
+                                <span className="received-card__meta-item">
+                                  <span className="material-symbols-outlined">calendar_today</span>
+                                  {formatDate(doc.created_at)}
+                                </span>
+                              </div>
+
+                              <div className="received-card__footer">
+                                <span className="received-badge badge--active">Active</span>
+                                <span className="perm-badge perm-badge--view-download">
+                                  View & Download
+                                </span>
+                                <span className="received-card__type">{doc.document_type}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="received-card__view-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedShare({
+                                  share_id: doc.id,
+                                  owner_id: '',
+                                  contact_id: '',
+                                  document_id: doc.id,
+                                  document_title: doc.title,
+                                  document_type: doc.document_type,
+                                  owner_name: dep.dependent_name,
+                                  shared_at: doc.created_at,
+                                  expires_at: doc.expiry_date || null,
+                                  is_active: true,
+                                  last_accessed_at: null,
+                                  allow_download: true,
+                                  access_level: 'view_download'
+                                });
+                                setModalOpen(true);
+                              }}
+                            >
+                              <span className="material-symbols-outlined">open_in_new</span>
+                              View
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
           )}
         </main>
       </div>

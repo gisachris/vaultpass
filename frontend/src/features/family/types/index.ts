@@ -44,3 +44,22 @@ export interface FamilyInvitationCreate {
   relationship: RelationshipType;
   notes?: string;
 }
+
+export function getRelativeRelationshipLabel(
+  relationship: FamilyRelationship,
+  currentUserEmail?: string
+): string {
+  const isGuardianCurrentUser = relationship.guardian?.email === currentUserEmail;
+  const rel = relationship.relationship;
+
+  if (isGuardianCurrentUser) {
+    if (rel === 'PARENT') return 'Child';
+    if (rel === 'CHILD') return 'Parent';
+  } else {
+    if (rel === 'PARENT') return 'Parent';
+    if (rel === 'CHILD') return 'Child';
+  }
+
+  return rel.charAt(0) + rel.slice(1).toLowerCase();
+}
+

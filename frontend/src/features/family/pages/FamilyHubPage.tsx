@@ -6,7 +6,7 @@ import { UserProfileMenu } from '../../../components/profile/UserProfileMenu';
 import { AddFamilyMemberModal } from '../modals/AddFamilyMemberModal';
 import { FamilyMemberDetailsModal } from '../modals/FamilyMemberDetailsModal';
 import { RemoveRelationshipConfirmation } from '../modals/RemoveRelationshipConfirmation';
-import { FamilyRelationship, RelationshipType } from '../types';
+import { FamilyRelationship, RelationshipType, getRelativeRelationshipLabel } from '../types';
 import './FamilyHubPage.css';
 
 export function FamilyHubPage() {
@@ -307,7 +307,7 @@ export function FamilyHubPage() {
                                     {targetUser?.full_name}
                                   </h4>
                                   <span className={`member-role-badge ${roleLabel.toLowerCase()}`}>
-                                    {roleLabel} ({item.relationship})
+                                    {roleLabel} ({getRelativeRelationshipLabel(item, user?.email)})
                                   </span>
                                 </div>
                               </div>
