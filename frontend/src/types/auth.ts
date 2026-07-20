@@ -17,11 +17,18 @@ export interface RegisterCredentials {
   password: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+  verification_token: string;
+  email: string;
+  full_name: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
+  register: (credentials: RegisterCredentials) => Promise<RegisterResponse>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
