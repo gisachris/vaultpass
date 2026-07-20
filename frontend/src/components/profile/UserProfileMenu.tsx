@@ -86,17 +86,6 @@ export function UserProfileMenu({ variant = 'topbar' }: UserProfileMenuProps) {
 
           <div className="upm-divider" />
 
-          {/* Actions */}
-          <button
-            type="button"
-            className="upm-menu-item"
-            onClick={handleSettings}
-            role="menuitem"
-          >
-            <span className="material-symbols-outlined">settings</span>
-            Settings
-          </button>
-
           <div className="upm-divider" />
 
           <button

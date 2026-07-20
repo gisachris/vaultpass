@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { to: '/shared-access', label: 'Shared Access', icon: 'share' },
   { to: '/received-documents', label: 'Received Documents', icon: 'inbox' },
   { to: '/notifications', label: 'Notifications', icon: 'notifications' },
-  { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 export function AppSidebar({ cta }: AppSidebarProps) {
