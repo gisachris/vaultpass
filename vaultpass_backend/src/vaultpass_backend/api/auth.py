@@ -1,8 +1,16 @@
+from datetime import timedelta
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from vaultpass_backend.core.dependencies import get_db, get_current_user
-from vaultpass_backend.schemas.auth import RegisterRequest, LoginRequest, UserResponse, TokenResponse
+from vaultpass_backend.schemas.auth import (
+    RegisterRequest, 
+    LoginRequest, 
+    UserResponse, 
+    TokenResponse,
+    ForgotPasswordRequest,
+    ResetPasswordRequest
+)
 from vaultpass_backend.services import auth_service
 from vaultpass_backend.services.audit_service import AuditService
 from vaultpass_backend.core.security import create_access_token
@@ -15,7 +23,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
     "/register",
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
-    response_description="Success confirmation message"
+    response_description="Success confirmation message with verification token"
 )
 async def register(
     request: Request,
@@ -28,6 +36,7 @@ async def register(
     - Checks for duplicate emails (409 Conflict)
     - Hashes password using Bcrypt
     - Saves user to PostgreSQL database
+    - Generates and returns a verification token for frontend EmailJS sending
     """
     user = await auth_service.register_user(db, register_data)
     await AuditService.log_action(
@@ -40,7 +49,20 @@ async def register(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
-    return {"message": "Account created successfully"}
+    
+    # Generate verification token (valid for 3 days)
+    verification_token = create_access_token(
+        data={"sub": str(user.id), "type": "verify"},
+        expires_delta=timedelta(days=3)
+    )
+    
+    return {
+        "message": "Account created successfully. Please verify your email.",
+        "verification_token": verification_token,
+        "email": user.email,
+        "full_name": user.full_name
+    }
+
 
 @router.post(
     "/login",
@@ -113,3 +135,62 @@ async def check_email(
     """
     user = await auth_service.get_user_by_email(db, email.lower().strip())
     return {"exists": user is not None}
+
+
+@router.post(
+    "/verify-email",
+    status_code=status.HTTP_200_OK,
+    summary="Verify user email",
+    response_description="Email verified successfully"
+)
+async def verify_email(
+    request: Request,
+    token: str = Query(..., description="The email verification token"),
+    db: AsyncSession = Depends(get_db)
+):
+    user = await auth_service.verify_email_token(db, token)
+    await AuditService.log_action(
+        db=db,
+        user_id=user.id,
+        action="VERIFY_EMAIL",
+        entity_type="USER",
+        entity_id=user.id,
+        description="User email verified successfully.",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+    return {"message": "Email verified successfully"}
+
+
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+    summary="Request password reset token",
+    response_description="Password reset token generated"
+)
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    token = await auth_service.generate_password_reset_token(db, data.email)
+    return {
+        "message": "Password reset token generated.",
+        "reset_token": token,
+        "email": data.email
+    }
+
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Reset password using token",
+    response_description="Password reset successfully"
+)
+async def reset_password(
+    request: Request,
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    await auth_service.reset_password_with_token(db, data.token, data.new_password)
+    return {"message": "Password reset successfully"}
+
