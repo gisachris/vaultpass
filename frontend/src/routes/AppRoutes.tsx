@@ -10,6 +10,9 @@ import { SharedDocumentView } from '../pages/SharedDocumentView';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ReceivedDocumentsPage } from '../pages/ReceivedDocumentsPage';
 import { FamilyHubPage } from '../features/family/pages/FamilyHubPage';
+import { VerifyEmailPage } from '../pages/VerifyEmailPage';
+import { ForgotPasswordPage } from '../pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '../pages/ResetPasswordPage';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -66,8 +69,12 @@ export function AppRoutes() {
       <Route path="/settings"           element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="/signup"             element={<PublicOnlyRoute><SignUpPage /></PublicOnlyRoute>} />
       <Route path="/login"              element={<PublicOnlyRoute><SignInPage /></PublicOnlyRoute>} />
+      <Route path="/forgot-password"    element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
+      <Route path="/reset-password"     element={<PublicOnlyRoute><ResetPasswordPage /></PublicOnlyRoute>} />
+      <Route path="/verify"             element={<VerifyEmailPage />} />
       <Route path="/shared/:token"      element={<SharedDocumentView />} />
       <Route path="*"                   element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
+

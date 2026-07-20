@@ -47,3 +47,19 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class ForgotPasswordRequest(BaseModel):
+    """
+    Schema for requesting a password reset token.
+    """
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """
+    Schema for resetting password with a token.
+    """
+    token: str
+    new_password: str
+

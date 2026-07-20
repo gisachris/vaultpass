@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import { sendVerificationEmail } from '../services/emailService';
 import './AuthPage.css';
 
 export function SignUpPage() {
@@ -18,6 +19,7 @@ export function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -51,13 +53,24 @@ export function SignUpPage() {
 
     setIsSubmitting(true);
     try {
-      await register({
+      const data = await register({
         full_name: formData.fullName,
         email: formData.email,
         password: formData.password,
       });
-      toast.success('Account created successfully! Please sign in.');
-      navigate('/login');
+
+      const verificationLink = `${window.location.origin}/verify?token=${data.verification_token}`;
+
+      toast.promise(
+        sendVerificationEmail(formData.email, formData.fullName, verificationLink),
+        {
+          loading: 'Sending verification email...',
+          success: 'Verification email sent! Please check your inbox.',
+          error: 'Failed to send verification email.',
+        }
+      );
+
+      setVerificationSent(true);
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || 'Registration failed. Please try again.';
       toast.error(errorMsg);
@@ -65,6 +78,7 @@ export function SignUpPage() {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <div className="auth-page-wrapper">
@@ -122,149 +136,167 @@ export function SignUpPage() {
           </div>
 
           <div className="auth-form-container">
-            <div className="auth-form-header">
-              <h2 className="auth-form-title">Create Account</h2>
-              <p className="auth-form-subtitle">Secure your sensitive documents today.</p>
-            </div>
-
-            <form className="auth-form" onSubmit={handleSubmit}>
-              {/* Full Name Field */}
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="fullName">
-                  FULL NAME
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="material-symbols-outlined auth-input-icon">person</span>
-                  <input
-                    className="auth-input"
-                    id="fullName"
-                    name="fullName"
-                    placeholder="John Doe"
-                    required
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                  />
-                </div>
+            {verificationSent ? (
+              <div className="auth-verification-sent" style={{ textAlign: 'center', padding: '20px 0' }}>
+                <span className="material-symbols-outlined auth-verification-icon" style={{ fontSize: '64px', color: '#10B981', marginBottom: '16px' }}>
+                  mark_email_read
+                </span>
+                <h2 className="auth-form-title">Verify Your Email</h2>
+                <p className="auth-form-subtitle" style={{ margin: '16px 0 24px', lineHeight: '1.6' }}>
+                  We've sent a verification link to <strong style={{ color: 'var(--text-primary, #ffffff)' }}>{formData.email}</strong>.
+                  Please click the link in the email to activate your account.
+                </p>
+                <button className="auth-submit-button" onClick={() => navigate('/login')}>
+                  Go to Sign In
+                </button>
               </div>
-
-              {/* Email Field */}
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="email">
-                  EMAIL ADDRESS
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="material-symbols-outlined auth-input-icon">mail</span>
-                  <input
-                    className="auth-input"
-                    id="email"
-                    name="email"
-                    placeholder="name@company.com"
-                    required
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                  />
+            ) : (
+              <>
+                <div className="auth-form-header">
+                  <h2 className="auth-form-title">Create Account</h2>
+                  <p className="auth-form-subtitle">Secure your sensitive documents today.</p>
                 </div>
-              </div>
 
-              {/* Password Field */}
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="password">
-                  PASSWORD
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="material-symbols-outlined auth-input-icon">lock</span>
-                  <input
-                    className="auth-input"
-                    id="password"
-                    name="password"
-                    placeholder="••••••••"
-                    required
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                  />
-                  <button
-                    className="auth-input-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                <form className="auth-form" onSubmit={handleSubmit}>
+                  {/* Full Name Field */}
+                  <div className="auth-form-group">
+                    <label className="auth-form-label" htmlFor="fullName">
+                      FULL NAME
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <span className="material-symbols-outlined auth-input-icon">person</span>
+                      <input
+                        className="auth-input"
+                        id="fullName"
+                        name="fullName"
+                        placeholder="John Doe"
+                        required
+                        type="text"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email Field */}
+                  <div className="auth-form-group">
+                    <label className="auth-form-label" htmlFor="email">
+                      EMAIL ADDRESS
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <span className="material-symbols-outlined auth-input-icon">mail</span>
+                      <input
+                        className="auth-input"
+                        id="email"
+                        name="email"
+                        placeholder="name@company.com"
+                        required
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="auth-form-group">
+                    <label className="auth-form-label" htmlFor="password">
+                      PASSWORD
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <span className="material-symbols-outlined auth-input-icon">lock</span>
+                      <input
+                        className="auth-input"
+                        id="password"
+                        name="password"
+                        placeholder="••••••••"
+                        required
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={handleInputChange}
+                      />
+                      <button
+                        className="auth-input-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined">
+                          {showPassword ? 'visibility_off' : 'visibility'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password Field */}
+                  <div className="auth-form-group">
+                    <label className="auth-form-label" htmlFor="confirmPassword">
+                      CONFIRM PASSWORD
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <span className="material-symbols-outlined auth-input-icon">lock_reset</span>
+                      <input
+                        className="auth-input"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="••••••••"
+                        required
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                      />
+                      <button
+                        className="auth-input-toggle"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined">
+                          {showConfirmPassword ? 'visibility_off' : 'visibility'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Terms & Conditions */}
+                  <div className="auth-checkbox-group">
+                    <input
+                      className="auth-checkbox"
+                      id="terms"
+                      name="terms"
+                      required
+                      type="checkbox"
+                      checked={formData.terms}
+                      onChange={handleInputChange}
+                    />
+                    <label className="auth-checkbox-label" htmlFor="terms">
+                      I agree to the{' '}
+                      <a className="auth-link auth-link-bold" href="#">
+                        Terms of Service
+                      </a>{' '}
+                      and{' '}
+                      <a className="auth-link auth-link-bold" href="#">
+                        Privacy Policy
+                      </a>
+                      .
+                    </label>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button className="auth-submit-button" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Creating Account...' : 'Create Account'}
                   </button>
+                </form>
+
+                {/* Navigation Link */}
+                <div className="auth-footer-link">
+                  <p className="auth-footer-text">
+                    Already have an account?{' '}
+                    <a className="auth-link auth-link-bold" href="/login">
+                      Sign In
+                    </a>
+                  </p>
                 </div>
-              </div>
-
-              {/* Confirm Password Field */}
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="confirmPassword">
-                  CONFIRM PASSWORD
-                </label>
-                <div className="auth-input-wrapper">
-                  <span className="material-symbols-outlined auth-input-icon">lock_reset</span>
-                  <input
-                    className="auth-input"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    placeholder="••••••••"
-                    required
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                  />
-                  <button
-                    className="auth-input-toggle"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined">
-                      {showConfirmPassword ? 'visibility_off' : 'visibility'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Terms & Conditions */}
-              <div className="auth-checkbox-group">
-                <input
-                  className="auth-checkbox"
-                  id="terms"
-                  name="terms"
-                  required
-                  type="checkbox"
-                  checked={formData.terms}
-                  onChange={handleInputChange}
-                />
-                <label className="auth-checkbox-label" htmlFor="terms">
-                  I agree to the{' '}
-                  <a className="auth-link auth-link-bold" href="#">
-                    Terms of Service
-                  </a>{' '}
-                  and{' '}
-                  <a className="auth-link auth-link-bold" href="#">
-                    Privacy Policy
-                  </a>
-                  .
-                </label>
-              </div>
-
-              {/* Submit Button */}
-              <button className="auth-submit-button" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
-
-            {/* Navigation Link */}
-            <div className="auth-footer-link">
-              <p className="auth-footer-text">
-                Already have an account?{' '}
-                <a className="auth-link auth-link-bold" href="/login">
-                  Sign In
-                </a>
-              </p>
-            </div>
+              </>
+            )}
           </div>
 
           {/* Trust Indicators */}

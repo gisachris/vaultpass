@@ -10,8 +10,20 @@ class FamilyRepository:
     async def create_relationship(db: AsyncSession, relationship: FamilyRelationship) -> FamilyRelationship:
         db.add(relationship)
         await db.commit()
-        await db.refresh(relationship)
-        return relationship
+        # Re-fetch with eager loading so guardian/dependent are available for serialization.
+        # Without this, Pydantic model_validate() triggers lazy loads on a stale session,
+        # causing a 500 that the browser misreports as a CORS error.
+        query = (
+            select(FamilyRelationship)
+            .where(FamilyRelationship.id == relationship.id)
+            .options(
+                selectinload(FamilyRelationship.guardian),
+                selectinload(FamilyRelationship.dependent),
+                selectinload(FamilyRelationship.inviter)
+            )
+        )
+        result = await db.execute(query)
+        return result.scalar_one()
 
     @staticmethod
     async def get_relationship_by_id(db: AsyncSession, relationship_id: uuid.UUID) -> Optional[FamilyRelationship]:

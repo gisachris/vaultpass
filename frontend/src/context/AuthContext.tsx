@@ -52,7 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (credentials: RegisterCredentials) => {
     setLoading(true);
     try {
-      await api.post('/auth/register', credentials);
+      const response = await api.post('/auth/register', credentials);
+      return response.data;
     } finally {
       setLoading(false);
     }
