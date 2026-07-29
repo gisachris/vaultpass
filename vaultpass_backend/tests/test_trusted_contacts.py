@@ -341,10 +341,11 @@ def test_service_delete_contact_success(mock_delete, mock_get_id, mock_notify_de
 
 # ================= AUTO-LINKING TESTS =================
 
+@patch("vaultpass_backend.services.notification.NotificationService.notify_added_as_trusted_contact", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.notification.NotificationService.notify_contact_added", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.get_contact_by_email", new_callable=AsyncMock)
 @patch("vaultpass_backend.services.trusted_contact.TrustedContactRepository.create_contact", new_callable=AsyncMock)
-def test_create_contact_links_registered_user(mock_create, mock_get_email, mock_notify, mock_user):
+def test_create_contact_links_registered_user(mock_create, mock_get_email, mock_notify, mock_notify_linked, mock_user):
     """When the contact email matches a registered VaultPass user, linked_user_id is set automatically."""
     from vaultpass_backend.services.trusted_contact import TrustedContactService
     from vaultpass_backend.schemas.trusted_contact import TrustedContactCreate

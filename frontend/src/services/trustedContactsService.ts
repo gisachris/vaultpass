@@ -37,8 +37,8 @@ export async function searchTrustedContacts(
 
 export async function createTrustedContact(
   payload: TrustedContactCreatePayload,
-): Promise<TrustedContactModel> {
-  const response = await api.post<TrustedContactModel>(BASE_PATH, payload);
+): Promise<{ message: string; data: TrustedContactModel }> {
+  const response = await api.post<{ message: string; data: TrustedContactModel }>(BASE_PATH, payload);
   return response.data;
 }
 

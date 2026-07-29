@@ -7,11 +7,13 @@ class TrustedContactCreate(BaseModel):
     """
     Schema for creating a new trusted contact.
     """
-    full_name: str = Field(
-        ...,
+    full_name: Optional[str] = Field(
+        None,
         min_length=2,
         max_length=255,
-        description="Full name of the contact (minimum 2 characters)"
+        description="Optional full name of the contact. If omitted, resolved automatically: "
+                     "the registered user's name if the email matches an existing account, "
+                     "otherwise a placeholder derived from the email (replaced once the invitee registers)."
     )
     email: EmailStr = Field(
         ...,
